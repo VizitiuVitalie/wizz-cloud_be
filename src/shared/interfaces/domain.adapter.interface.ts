@@ -1,11 +1,11 @@
 import { AbstractEntity } from '../entities/abstract.entity';
 
 export interface DomainAdapterInterface<DTO, D, E extends AbstractEntity> {
-  toDomainFromDto(dto: DTO): D;
+  FromDtoToDomain(dto: DTO): D;
 
-  toEntityFromDomain(domain: D): E;
+  FromDomainToDto(domain: D): DTO;
 
-  toDomainFromEntity(entity: E): D;
+  FromEntityToDomain(entity: E): D;
 
-  toDtoFromDomain(domain: D): DTO;
+  FromDomainToEntity(domain: D): E;
 }

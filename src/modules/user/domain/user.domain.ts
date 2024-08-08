@@ -1,10 +1,10 @@
 export class UserDomain {
-  public id!: number;
+  public id?: number;
   public fullName: string;
   public email: string;
   public password: string;
-  public createdAt!: Date;
-  public updatedAt!: Date;
+  public createdAt?: Date;
+  public updatedAt?: Date;
 
   constructor(
     id: number,
