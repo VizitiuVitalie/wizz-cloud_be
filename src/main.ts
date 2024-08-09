@@ -1,17 +1,16 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
+import { ConfigEnums } from './core/config/config.enums';
+import { HttpConfig } from './core/config/http.config';
 
 async function bootstrap() {
-  dotenv.config();
-
-  const port = process.env.PORT;
-
   const app = await NestFactory.create(AppModule);
-  await app.listen(port, () => {
-    console.log(`app is listening on port ${port}`);
+
+  const httpConfig = app.get(ConfigService).get<HttpConfig>(ConfigEnums.HTTP);
+
+  await app.listen(httpConfig.port, () => {
+    console.log(`app is listening on port ${httpConfig.port}`);
   });
 }
-bootstrap();
+void bootstrap();
