@@ -42,6 +42,9 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# Ignore configuration files with sensitive data
+config.yaml
+
 # temp directory
 .temp
 .tmp

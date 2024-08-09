@@ -1,0 +1,16 @@
+#before using, remove ".example" in this file's naming.
+
+http:
+  port: 8080
+
+db:
+  postgres:
+    user: your_db_user
+    port: 5432
+    host: localhost
+    database: your_db_name
+    password: your_db_password
+
+security:
+  accessToken_secret_key: your_accessToken_secret_key
+  refreshToken_secret_key: your_refreshToken_secret_key

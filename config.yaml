@@ -1,10 +1,14 @@
 http:
-  port: 8080
+  port: 1212
 
 db:
   postgres:
-    user: qe
+    user: postgres
     port: 5432
     host: localhost
-    database: 'yaml-db'
-    password: 'yaml-db'
+    database: wizzcloud_db
+    password: 28uU1w6D
+
+security:
+  accessToken_secret_key: ax123noiwSID1ia
+  refreshToken_secret_key: ASDv2r391SDIjpa
