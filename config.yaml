@@ -1,0 +1,10 @@
+http:
+  port: 8080
+
+db:
+  postgres:
+    user: qe
+    port: 5432
+    host: localhost
+    database: 'yaml-db'
+    password: 'yaml-db'

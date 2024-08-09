@@ -1,11 +1,5 @@
-type DbConfigOpts = {
-  user: string;
-  password: string;
-  host: string;
-  database: string;
-  port: number;
-};
+import { DatabaseConfig } from '../config/db.config';
 
 export class DbConfig {
-  public constructor(public readonly options: DbConfigOpts) {}
+  public constructor(public readonly options: DatabaseConfig) {}
 }
