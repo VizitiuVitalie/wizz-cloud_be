@@ -1,3 +1,5 @@
+import { UserDomain } from '../domain/user.domain';
+
 export interface UserServiceInterface {
-  createUser(domain);
+  create(domain: UserDomain): Promise<UserDomain>;
 }

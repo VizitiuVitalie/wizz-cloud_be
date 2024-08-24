@@ -30,11 +30,11 @@ export class UserAdapter implements UserAdapterInterface {
 
   public FromEntityToDomain(entity: UserEntity): UserDomain {
     return {
-      createdAt: entity.createdAt,
-      email: entity.email,
-      fullName: entity.fullName,
       id: entity.id,
+      fullName: entity.fullName,
+      email: entity.email,
       password: entity.password,
+      createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
   }

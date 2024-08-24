@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { DbProvider } from '../../core/db/db.provider';
 import { UserDomain } from './domain/user.domain';
 import { UserEntity } from './domain/user.entity';
-import { UserAdapterInterface } from './interfaces/user.adapter.interface';
 import { UserRepoInterface } from './interfaces/user.repo.interface';
+import { UserAdapter } from './user.adapter';
+import { UserAdapterInterface } from './interfaces/user.adapter.interface';
 
 @Injectable()
 export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
