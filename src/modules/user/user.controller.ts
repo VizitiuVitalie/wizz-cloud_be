@@ -7,18 +7,26 @@ import { UserAdapterInterface } from './interfaces/user.adapter.interface';
 @Controller('user')
 export class UserController {
   constructor(
-    @Inject('UserServiceInterface') private readonly userService: UserServiceInterface,
-    @Inject('UserAdapterInterface') private readonly userAdapter: UserAdapterInterface,
+    @Inject('UserServiceInterface')
+    private readonly userService: UserServiceInterface,
+    @Inject('UserAdapterInterface')
+    private readonly userAdapter: UserAdapterInterface,
   ) {}
 
   @Post('create')
   public async create(@Body() dto: CreateUserDto): Promise<UserDto> {
-    const domain = this.userAdapter.FromCreateUserDtoToDomain(dto);
+    try {
 
-    const createdDomain = await this.userService.create(domain);
+      const domain = this.userAdapter.FromCreateUserDtoToDomain(dto);
 
-    const createdDto = this.userAdapter.FromDomainToDto(createdDomain);
+      const createdDomain = await this.userService.create(domain);
 
-    return createdDto
+      const createdDto = this.userAdapter.FromDomainToDto(createdDomain);
+
+      return createdDto;
+
+    } catch (error) {
+      console.error('[UserController.register]:', error);
+    }
   }
 }
