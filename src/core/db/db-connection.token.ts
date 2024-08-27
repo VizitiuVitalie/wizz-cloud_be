@@ -1,1 +1,0 @@
-export const DB_CONNECTION_TOKEN = Symbol('DB_CONNECTION_TOKEN');
