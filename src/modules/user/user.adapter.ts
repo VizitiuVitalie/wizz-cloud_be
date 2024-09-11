@@ -4,6 +4,7 @@ import { UserDto } from './dto/user.dto';
 import { UserAdapterInterface } from './interfaces/user.adapter.interface';
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserAdapter implements UserAdapterInterface {
@@ -20,10 +21,10 @@ export class UserAdapter implements UserAdapterInterface {
 
   public FromDomainToDto(domain: UserDomain): UserDto {
     return {
-      createdAt: domain.createdAt,
-      email: domain.email,
-      fullName: domain.fullName,
       id: domain.id,
+      fullName: domain.fullName,
+      email: domain.email,
+      createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
     };
   }
@@ -31,22 +32,22 @@ export class UserAdapter implements UserAdapterInterface {
   public FromEntityToDomain(entity: UserEntity): UserDomain {
     return {
       id: entity.id,
-      fullName: entity.fullName,
+      fullName: entity.full_name,
       email: entity.email,
       password: entity.password,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
+      createdAt: entity.created_at,
+      updatedAt: entity.updated_at,
     };
   }
 
   public FromDomainToEntity(domain: UserDomain): UserEntity {
     return {
-      createdAt: domain.createdAt,
+      created_at: domain.createdAt,
       email: domain.email,
-      fullName: domain.fullName,
+      full_name: domain.fullName,
       id: domain.id,
       password: domain.password,
-      updatedAt: domain.updatedAt,
+      updated_at: domain.updatedAt,
     };
   }
 
@@ -57,6 +58,17 @@ export class UserAdapter implements UserAdapterInterface {
       fullName: dto.fullName,
       id: 0,
       password: dto.password,
+      updatedAt: new Date(),
+    };
+  }
+
+  public FromUpdateUserDtoToDomain(dto: UpdateUserDto, id: number): UserDomain {
+    return {
+      id: id,
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      createdAt: undefined,
       updatedAt: new Date(),
     };
   }
