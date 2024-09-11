@@ -10,8 +10,7 @@ import { UserAdapter } from './user.adapter';
 export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
   constructor(
     private readonly dbProvider: DbProvider,
-    @Inject(UserAdapter)
-    private readonly userAdapter: UserAdapterInterface,
+    @Inject(UserAdapter) private readonly userAdapter: UserAdapterInterface,
   ) {}
 
   public async save(domain: UserDomain): Promise<UserDomain> {
@@ -31,5 +30,39 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
     } catch (error) {
       throw error;
     }
+  }
+
+  public async findById(id: number): Promise<UserDomain | null> {
+    const [entity] = await this.dbProvider.query<UserEntity>(
+      `SELECT * FROM users WHERE id = $1 LIMIT 1`,
+      [id],
+    );
+
+    console.log('repo: ', entity);
+
+    if (!entity) {
+      return null;
+    }
+
+    return this.userAdapter.FromEntityToDomain(entity);
+  }
+
+  public async updateById(domain: UserDomain): Promise<UserDomain> {
+    const [updatedEntity] = await this.dbProvider.query<UserEntity>(
+      `UPDATE users
+       SET full_name = $1,
+           email = $2,
+           password = $3,
+           updated_at = NOW()
+       WHERE id = $4
+       RETURNING *;`,
+      [domain.fullName, domain.email, domain.password, domain.id],
+    );
+
+    return this.userAdapter.FromEntityToDomain(updatedEntity);
+  }
+
+  public async deleteById(id: number): Promise<void> {
+    await this.dbProvider.query(`DELETE FROM users * WHERE id = $1`, [id]);
   }
 }

@@ -12,7 +12,21 @@ export class UserService implements UserServiceInterface {
     private readonly userRepo: UserRepoInterface<UserDomain, UserEntity>,
   ) {}
 
-  public create(domain: UserDomain): Promise<UserDomain> {
+  public async create(domain: UserDomain): Promise<UserDomain> {
     return this.userRepo.save(domain);
+  }
+
+  public async findById(id: number): Promise<UserDomain | null> {
+    const result = await this.userRepo.findById(id);
+    console.log('service: ', result);
+    return result
+  }
+
+  public async updateById(domain: UserDomain): Promise<UserDomain> {
+    return this.userRepo.updateById(domain);
+  }
+
+  public async deleteById(id: number): Promise<void> {
+    await this.userRepo.deleteById(id);
   }
 }
