@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DbProvider } from '../../core/db/db.provider';
 import { UserDomain } from './domain/user.domain';
 import { UserEntity } from './domain/user.entity';
 import { UserRepoInterface } from './interfaces/user.repo.interface';
-import { UserAdapter } from './user.adapter';
 import { UserAdapterInterface } from './interfaces/user.adapter.interface';
+import { UserAdapter } from './user.adapter';
 
 @Injectable()
 export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
   constructor(
     private readonly dbProvider: DbProvider,
+    @Inject(UserAdapter)
     private readonly userAdapter: UserAdapterInterface,
   ) {}
 
