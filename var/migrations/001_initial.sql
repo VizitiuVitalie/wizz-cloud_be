@@ -12,9 +12,32 @@ CREATE TABLE users (
 
 -- +goose StatementEnd
 
+-- +goose StatementBegin
+
+CREATE TABLE data (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  url TEXT NOT NULL,
+  size BIGINT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_data_user_id ON data(user_id);
+
+-- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
 
 DROP TABLE users;
 
 -- +goose StatementEnd
+
+-- +goose StatementBegin
+
+DROP TABLE data;
+
+-- +goose StatementEnd
+

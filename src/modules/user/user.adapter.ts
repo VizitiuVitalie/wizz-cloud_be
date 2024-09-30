@@ -19,6 +19,17 @@ export class UserAdapter implements UserAdapterInterface {
     };
   }
 
+  public FromDomainToEntity(domain: UserDomain): UserEntity {
+    return {
+      created_at: domain.createdAt,
+      email: domain.email,
+      full_name: domain.fullName,
+      id: domain.id,
+      password: domain.password,
+      updated_at: domain.updatedAt,
+    };
+  }
+
   public FromDomainToDto(domain: UserDomain): UserDto {
     return {
       id: domain.id,
@@ -37,17 +48,6 @@ export class UserAdapter implements UserAdapterInterface {
       password: entity.password,
       createdAt: entity.created_at,
       updatedAt: entity.updated_at,
-    };
-  }
-
-  public FromDomainToEntity(domain: UserDomain): UserEntity {
-    return {
-      created_at: domain.createdAt,
-      email: domain.email,
-      full_name: domain.fullName,
-      id: domain.id,
-      password: domain.password,
-      updated_at: domain.updatedAt,
     };
   }
 
