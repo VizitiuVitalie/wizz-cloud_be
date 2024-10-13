@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { DbModule } from '../../core/db/db.module';
-import { ContentAdapter } from './content.adapter';
+import { ContentController } from './content.controller';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
-  imports: [DbModule],
+  imports: [StorageModule],
   controllers: [ContentController],
-  providers: [ContentRepo, ContentService, ContentAdapter],
-  exports: [ContentService],
 })
-export class UserModule {}
+export class ContentModule {}
