@@ -36,22 +36,18 @@ export class ContentController {
     @Body() dto: CreateContentDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ContentDto> {
-    // Определяем путь назначения для файла
-    const destination = '/home/wizz_dev/Desktop/cloud_storage/' + file.originalname;
 
-    // Сохраняем файл и получаем путь к нему
+    const destination = '/home/wizz_dev/Desktop/cloud_storage/';
+
     const url = await this.localStorage.save(file, destination);
 
-    // Создаём домен с информацией о файле (включая URL)
     const domain = this.contentAdapter.FromCreateContentDtoToDomain({
       ...dto,
-      url, // Включаем URL в домен
+      url,
     });
 
-    // Сохраняем домен в базе данных
     const createdDomain = await this.contentService.create(domain);
 
-    // Возвращаем DTO для клиента
     return this.contentAdapter.FromDomainToDto(createdDomain);
   }
 

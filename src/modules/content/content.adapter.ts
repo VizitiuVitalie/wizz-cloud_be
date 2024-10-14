@@ -58,7 +58,7 @@ export class ContentAdapter implements ContentAdapterInterface {
   public FromCreateContentDtoToDomain(dto: CreateContentDto): ContentDomain {
     return {
       id: dto.id,
-      userId: dto.id,
+      userId: dto.userId,
       type: dto.type,
       url: dto.url,
       size: dto.size,
