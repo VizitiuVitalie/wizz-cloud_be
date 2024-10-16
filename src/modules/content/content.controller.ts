@@ -7,8 +7,9 @@ import {
   Param,
   Delete,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ContentServiceInterface } from './interfaces/content.service.interface';
 import { ContentAdapterInterface } from './interfaces/content.adapter.interface';
 import { ContentService } from './content.service';
@@ -30,25 +31,54 @@ export class ContentController {
     private readonly localStorage: FileStorageI,
   ) {}
 
-  @Post()
-  @UseInterceptors(FileInterceptor('file'))
-  public async create(
+  @Post('/:userId')
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'files', maxCount: 10 }], {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, callback) => {
+        if (
+          ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)
+        ) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
+      },
+    }),
+  )
+  public async uploadFiles(
+    @Param('userId') userId: number,
+    @UploadedFiles() files: { files?: Express.Multer.File[] },
     @Body() dto: CreateContentDto,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<ContentDto> {
+  ): Promise<ContentDto[]> {
+    if (!files?.files?.length) {
+      throw new Error('No files uploaded');
+    }
 
-    const destination = '/home/wizz_dev/Desktop/cloud_storage/';
+    const savedContents: ContentDto[] = [];
 
-    const url = await this.localStorage.save(file, destination);
+    for (const file of files.files) {
+      const fileUrl = await this.localStorage.save(
+        file,
+        '/home/wizz_dev/Desktop/cloud_storage/',
+      );
 
-    const domain = this.contentAdapter.FromCreateContentDtoToDomain({
-      ...dto,
-      url,
-    });
+      const documentData: CreateContentDto = {
+        id: null,
+        userId,
+        url: fileUrl,
+        type: file.mimetype,
+        size: file.size,
+      };
 
-    const createdDomain = await this.contentService.create(domain);
+      const domain =
+        this.contentAdapter.FromCreateContentDtoToDomain(documentData);
+      const createdDomain = await this.contentService.create(domain);
 
-    return this.contentAdapter.FromDomainToDto(createdDomain);
+      savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
+    }
+
+    return savedContents;
   }
 
   @Get(':id')
