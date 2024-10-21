@@ -18,7 +18,6 @@ import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
 import { LocalStorage } from '../storage/local-storage.service';
 import { FileStorageI } from '../storage/interfaces/file-storage.interface';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('content')
 export class ContentController {
@@ -60,7 +59,7 @@ export class ContentController {
     for (const file of files.files) {
       const fileUrl = await this.localStorage.save(
         file,
-        '/home/wizz_dev/Desktop/cloud_storage/',
+        `/home/wizz_dev/Desktop/cloud_storage/`,
       );
 
       const documentData: CreateContentDto = {
