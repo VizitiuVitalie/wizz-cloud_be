@@ -14,7 +14,6 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
   ) {}
 
   public async save(domain: UserDomain): Promise<UserDomain> {
-    try {
       const [entity] = await this.dbProvider.query<UserEntity>(
         `INSERT INTO users (full_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
         [
@@ -27,9 +26,6 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
       );
 
       return this.userAdapter.FromEntityToDomain(entity);
-    } catch (error) {
-      throw error;
-    }
   }
 
   public async findById(id: number): Promise<UserDomain | null> {
