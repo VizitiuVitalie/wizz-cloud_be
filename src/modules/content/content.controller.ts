@@ -70,8 +70,7 @@ export class ContentController {
         size: file.size,
       };
 
-      const domain =
-        this.contentAdapter.FromCreateContentDtoToDomain(documentData);
+      const domain = this.contentAdapter.FromCreateContentDtoToDomain(documentData);
       const createdDomain = await this.contentService.create(domain);
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));

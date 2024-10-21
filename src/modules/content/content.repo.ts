@@ -17,23 +17,19 @@ export class ContentRepo
   ) {}
 
   public async save(domain: ContentDomain): Promise<ContentDomain> {
-    try {
-      const [entity] = await this.dbProvider.query<ContentEntity>(
-        `INSERT INTO content (user_id, type, url, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [
-          domain.userId,
-          domain.type,
-          domain.url,
-          domain.size,
-          domain.createdAt,
-          domain.updatedAt,
-        ],
-      );
+    const [entity] = await this.dbProvider.query<ContentEntity>(
+      `INSERT INTO content (user_id, type, url, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [
+        domain.userId,
+        domain.type,
+        domain.url,
+        domain.size,
+        domain.createdAt,
+        domain.updatedAt,
+      ],
+    );
 
-      return this.contentAdapter.FromEntityToDomain(entity);
-    } catch (error) {
-      throw error;
-    }
+    return this.contentAdapter.FromEntityToDomain(entity);
   }
 
   public async findById(id: number): Promise<ContentDomain | null> {
@@ -45,7 +41,7 @@ export class ContentRepo
     console.log('repo: ', entity);
 
     if (!entity) {
-      return null;
+      return undefined;
     }
 
     return this.contentAdapter.FromEntityToDomain(entity);
@@ -57,7 +53,7 @@ export class ContentRepo
       [userId],
     );
     if (!entity) {
-      return null;
+      return undefined;
     }
     return this.contentAdapter.FromEntityToDomain(entity);
   }
