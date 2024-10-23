@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Config } from './core/config/config';
 import { UserModule } from './modules/user/user.module';
 import { ContentModule } from './modules/content/content.module';
-import { StorageModule } from './modules/storage/storage.module';
+import { StorageModule } from './libs/storage/storage.module';
 
 @Module({
   imports: [

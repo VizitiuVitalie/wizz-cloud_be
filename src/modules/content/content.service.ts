@@ -24,7 +24,7 @@ export class ContentService implements ContentServiceInterface {
     return result;
   }
 
-  public async findByUserId(userId: number): Promise<ContentDomain | null> {
+  public async findByUserId(userId: number): Promise<ContentDomain[] | null> {
     const result = await this.contentRepo.findByUserId(userId);
     return result;
   }

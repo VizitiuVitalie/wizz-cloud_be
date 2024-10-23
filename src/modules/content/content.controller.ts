@@ -16,8 +16,8 @@ import { ContentService } from './content.service';
 import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
-import { LocalStorage } from '../storage/local-storage.service';
-import { FileStorageI } from '../storage/interfaces/file-storage.interface';
+import { LocalStorage } from '../../libs/storage/local-storage.service';
+import { FileStorageI } from '../../libs/storage/interfaces/file-storage.interface';
 
 @Controller('content')
 export class ContentController {
@@ -62,15 +62,15 @@ export class ContentController {
         `/home/wizz_dev/Desktop/cloud_storage/`,
       );
 
-      const documentData: CreateContentDto = {
+      const contentData: CreateContentDto = {
         id: null,
-        userId,
+        userId: userId,
         url: fileUrl,
         type: file.mimetype,
         size: file.size,
       };
 
-      const domain = this.contentAdapter.FromCreateContentDtoToDomain(documentData);
+      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.create(domain);
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
@@ -79,16 +79,17 @@ export class ContentController {
     return savedContents;
   }
 
-  @Get(':id')
+  @Get('ById/:id')
   public async findById(@Param('id') id: number): Promise<ContentDto | null> {
     return this.contentService.findById(id);
   }
 
-  @Get(':user_id')
+  @Get('ByUserId/:userId')
   public async findByUserId(
-    @Param('user_id') userId: number,
-  ): Promise<ContentDto | null> {
-    return this.contentService.findByUserId(userId);
+    @Param('userId') userId: number,
+  ): Promise<ContentDto[] | null> {
+    const content = await this.contentService.findByUserId(userId);
+    return content;
   }
 
   @Delete(':id')
