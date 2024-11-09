@@ -32,6 +32,13 @@ export class UserController {
     return this.userAdapter.FromDomainToDto(createdDomain);
   }
 
+  @Get()
+  public async findAll(): Promise<UserDto[]> {
+    const domain = await this.userService.findAll();
+
+    return domain;
+  }
+
   @Get(':id')
   public async findById(@Param('id') id: number): Promise<UserDto> {
     const domain = await this.userService.findById(id);

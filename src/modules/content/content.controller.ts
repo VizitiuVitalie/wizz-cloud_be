@@ -85,9 +85,7 @@ export class ContentController {
   }
 
   @Get('ByUserId/:userId')
-  public async findByUserId(
-    @Param('userId') userId: number,
-  ): Promise<ContentDto[] | null> {
+  public async findByUserId(@Param('userId') userId: number): Promise<ContentDto[] | null> {
     const content = await this.contentService.findByUserId(userId);
     return content;
   }
