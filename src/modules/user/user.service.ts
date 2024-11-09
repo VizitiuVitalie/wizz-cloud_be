@@ -22,6 +22,11 @@ export class UserService implements UserServiceInterface {
     return result
   }
 
+  public async findAll(): Promise<UserDomain[] | null> {
+    const result = await this.userRepo.findAll();
+    return result
+  }
+
   public async updateById(domain: UserDomain): Promise<UserDomain> {
     return this.userRepo.updateById(domain);
   }
