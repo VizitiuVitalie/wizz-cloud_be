@@ -22,7 +22,7 @@ export class UserController {
   constructor(
     @Inject(UserService) private readonly userService: UserServiceInterface,
     @Inject(UserAdapter) private readonly userAdapter: UserAdapterInterface,
-  ) {}
+  ) { }
 
   @Post()
   public async create(@Body() dto: CreateUserDto): Promise<UserDto> {
@@ -70,6 +70,6 @@ export class UserController {
   @Delete(':id')
   public async deleteById(@Param('id') id: number): Promise<string> {
     await this.userService.deleteById(id);
-    return(`user with id ${id} is deleted`)
+    return (`user with id ${id} is deleted`)
   }
 }
