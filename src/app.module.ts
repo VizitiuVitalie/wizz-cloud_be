@@ -9,8 +9,8 @@ import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [Config],
       isGlobal: true,
+      load: [Config],
     }),
     UserModule,
     AuthModule,
@@ -18,4 +18,4 @@ import { AuthModule } from './modules/auth/auth.module';
     StorageModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
