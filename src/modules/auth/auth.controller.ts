@@ -17,11 +17,6 @@ export class AuthController {
     return this.authService.login(dto)
   }
 
-  @Put('refresh/:refreshToken')
-  public async refresh(@Param('refreshToken') refreshToken: string) {
-    return this.authService.refreshSession(refreshToken);
-  } 
-
   @Delete('logout/:id')
   public async logout(@Param('id') id: number) {
     return this.authService.logout(id);

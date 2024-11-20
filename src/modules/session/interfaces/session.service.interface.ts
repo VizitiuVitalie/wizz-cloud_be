@@ -1,8 +1,6 @@
 import { AbstractEntity } from "src/shared/entities/abstract.entity";
+import { AuthTokens } from "src/modules/auth/interfaces/auth-tokens.interface";
 
-export interface SessionServiceInterface<E extends AbstractEntity> {
-    createSession(userId: number): Promise<E>;
-    deleteSession(id: number): Promise<void>;
-    findSessionByUserId(userId: number): Promise<E>;
-    refreshSession(sessionId: number, newAccessToken: string, newRefreshToken: string): Promise<E>;
+export interface SessionServiceInterface<T, E extends AbstractEntity> {
+    refreshSession(refreshToken: string): Promise<T>;
 }
