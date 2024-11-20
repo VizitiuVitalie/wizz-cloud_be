@@ -59,7 +59,7 @@ export class ContentController {
     for (const file of files.files) {
       const fileUrl = await this.localStorage.save(
         file,
-        `/home/wizz_dev/Desktop/cloud_storage/`,
+        `/home/wizzdev/Desktop/cloud_storage/`,
       );
 
       const contentData: CreateContentDto = {

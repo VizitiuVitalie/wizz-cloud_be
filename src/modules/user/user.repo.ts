@@ -43,6 +43,19 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
     return this.userAdapter.FromEntityToDomain(entity);
   }
 
+  public async findByEmail(email: string): Promise<UserDomain | null> {
+    const [entity] = await this.dbProvider.query<UserEntity>(
+      `SELECT * FROM users WHERE email = $1 LIMIT 1`,
+      [email],
+    );
+
+    if (!entity) {
+      return null;
+    }
+
+    return this.userAdapter.FromEntityToDomain(entity);
+  }
+
   public async findAll(): Promise<UserDomain[] | null> {
     const entities = await this.dbProvider.query<UserEntity>(
       `SELECT * FROM users;`
