@@ -76,17 +76,5 @@ export class AuthService implements AuthServiceInterface {
         return this.sessionRepo.deleteById(sessionId);
     }
 
-    public async refreshSession(refreshToken: string): Promise<AuthTokens> {
-        const session = await this.sessionRepo.findOneByRefreshToken(refreshToken);
-        if (!session) {
-            throw new UnauthorizedException('Invalid refresh token');
-        }
-
-        const newAccessToken = this.jwtService.sign({ sub: session.user_id }, { expiresIn: '1h' });
-        const newRefreshToken = this.jwtService.sign({ sub: session.user_id }, { expiresIn: '7d' });
-
-        await this.sessionRepo.refreshSession(session.id, newAccessToken, newRefreshToken);
-
-        return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-    }
+    
 }
