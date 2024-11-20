@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Delete, Inject } from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, Inject, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
 import { AuthServiceInterface } from './interfaces/auth.service.interface';
@@ -17,8 +17,13 @@ export class AuthController {
     return this.authService.login(dto)
   }
 
-  @Delete('logout/:bearer')
-  public async logout(@Param('bearer') bearer: string) {
-    return this.authService.logout(bearer);
+  @Put('refresh/:refreshToken')
+  public async refresh(@Param('refreshToken') refreshToken: string) {
+    return this.authService.refreshSession(refreshToken);
+  } 
+
+  @Delete('logout/:id')
+  public async logout(@Param('id') id: number) {
+    return this.authService.logout(id);
   }
 }

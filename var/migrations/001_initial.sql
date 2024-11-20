@@ -14,6 +14,21 @@ CREATE TABLE users (
 
 -- +goose StatementBegin
 
+CREATE TABLE sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  access_token VARCHAR(255) NOT NULL,
+  refresh_token VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- +goose StatementEnd
+
+
+-- +goose StatementBegin
+
 CREATE TABLE content (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -41,3 +56,8 @@ DROP TABLE content;
 
 -- +goose StatementEnd
 
+-- +goose StatementBegin
+
+DROP TABLE sessions;
+
+-- +goose StatementEnd

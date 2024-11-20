@@ -8,6 +8,7 @@ import { UserModule } from '../user/user.module';
 import { DbModule } from 'src/core/db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Config } from 'src/core/config/config';
+import { SessionRepo } from '../session/session.repo';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { Config } from 'src/core/config/config';
     }),
     ConfigModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SessionRepo],
   controllers: [AuthController],
   exports: [AuthService],
 })
