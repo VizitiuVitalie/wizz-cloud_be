@@ -41,6 +41,7 @@ export class AuthService implements AuthServiceInterface {
         session.user_id = user.id;
         session.access_token = accessToken;
         session.refresh_token = refreshToken;
+        session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         session.created_at = new Date();
         session.updated_at = new Date();
 

@@ -20,9 +20,8 @@ import { SessionRepo } from '../session/session.repo';
     UserModule,
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('jwt.JWT_SECRET'),
         signOptions: { expiresIn: '60m' },
       }),
       inject: [ConfigService],
