@@ -2,7 +2,8 @@ import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepo } from "../user/user.repo";
-import { AuthDto } from './dto/auth.dto';
+import { RegisterDto } from './dto/auth.dto';
+import { LoginDto } from "./dto/login.dto";
 import { UserDomain } from "../user/domain/user.domain";
 import { SessionEntity } from "../session/domain/session.entity";
 import { UserRepoInterface } from "../user/interfaces/user.repo.interface";
@@ -21,7 +22,7 @@ export class AuthService implements AuthServiceInterface {
         private readonly jwtService: JwtService,
     ) { }
 
-    public async register(dto: AuthDto): Promise<AuthTokens> {
+    public async register(dto: RegisterDto): Promise<AuthTokens> {
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
         const newUser: UserDomain = {
@@ -39,6 +40,7 @@ export class AuthService implements AuthServiceInterface {
 
         const session = new SessionEntity();
         session.user_id = user.id;
+        session.device_id = dto.deviceId;
         session.access_token = accessToken;
         session.refresh_token = refreshToken;
         session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -50,25 +52,37 @@ export class AuthService implements AuthServiceInterface {
         return { accessToken, refreshToken };
     }
 
-    public async login(dto: AuthDto): Promise<AuthTokens> {
+    public async login(dto: LoginDto): Promise<AuthTokens> {
         const user = await this.userRepo.findByEmail(dto.email);
         if (!user || !(await bcrypt.compare(dto.password, user.password))) {
             throw new UnauthorizedException('Invalid credentials');
         }
 
+        const existingSession: SessionEntity = await this.sessionRepo.findOneByUserIdAndDeviceId(user.id, dto.deviceId);
         const accessToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '1h' });
         const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
 
-        const newSession: SessionEntity = {
-            id: null,
-            user_id: user.id,
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            created_at: new Date(),
-            updated_at: new Date(),
+        if (existingSession) {
+            existingSession.access_token = accessToken;
+            existingSession.refresh_token = refreshToken;
+            existingSession.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            existingSession.updated_at = new Date();
+
+            await this.sessionRepo.updateSession(existingSession);
+
+        } else {
+            const newSession: SessionEntity = {
+                id: null,
+                user_id: user.id,
+                device_id: dto.deviceId,
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+            await this.sessionRepo.save(newSession);
         }
-        await this.sessionRepo.save(newSession);
 
         return { accessToken, refreshToken }
     }
@@ -77,5 +91,5 @@ export class AuthService implements AuthServiceInterface {
         return this.sessionRepo.deleteById(sessionId);
     }
 
-    
+
 }

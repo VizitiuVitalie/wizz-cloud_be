@@ -9,9 +9,10 @@ export class SessionRepo implements SessionRepoInterface<SessionEntity> {
 
     public async save(session: SessionEntity): Promise<SessionEntity> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
-            `INSERT INTO sessions (user_id, access_token, refresh_token, expires_at, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            `INSERT INTO sessions (user_id, device_id, access_token, refresh_token, expires_at, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
             [
                 session.user_id,
+                session.device_id,
                 session.access_token,
                 session.refresh_token,
                 session.expires_at,
@@ -36,6 +37,24 @@ export class SessionRepo implements SessionRepoInterface<SessionEntity> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
             `SELECT * FROM sessions WHERE refresh_token = $1 LIMIT 1`,
             [refreshToken],
+        )
+
+        return entity
+    }
+    
+    public async findOneByUserIdAndDeviceId(userId: number, deviceId: string): Promise<SessionEntity> {
+        const [entity] = await this.dbProvider.query<SessionEntity>(
+            `SELECT * FROM sessions WHERE user_id = $1 AND device_id = $2 LIMIT 1`,
+            [userId, deviceId],
+        )
+
+        return entity
+    }
+
+    public async updateSession(session: SessionEntity): Promise<SessionEntity> {
+        const [entity] = await this.dbProvider.query<SessionEntity>(
+            `UPDATE sessions SET access_token = $1, refresh_token = $2, expires_at = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
+            [session.access_token, session.refresh_token, session.expires_at, session.updated_at, session.id],
         )
 
         return entity
