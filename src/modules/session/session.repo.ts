@@ -9,11 +9,12 @@ export class SessionRepo implements SessionRepoInterface<SessionEntity> {
 
     public async save(session: SessionEntity): Promise<SessionEntity> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
-            `INSERT INTO sessions (user_id, access_token, refresh_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            `INSERT INTO sessions (user_id, access_token, refresh_token, expires_at, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
             [
                 session.user_id,
                 session.access_token,
                 session.refresh_token,
+                session.expires_at,
                 session.created_at,
                 session.updated_at,
             ],
