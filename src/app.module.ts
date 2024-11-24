@@ -5,6 +5,7 @@ import { UserModule } from './modules/user/user.module';
 import { ContentModule } from './modules/content/content.module';
 import { StorageModule } from './libs/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SessionModule } from './modules/session/session.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    SessionModule,
     ContentModule,
     StorageModule,
   ],

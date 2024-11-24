@@ -18,7 +18,7 @@ import { AuthServiceInterface } from "./interfaces/auth.service.interface";
 export class AuthService implements AuthServiceInterface {
     constructor(
         @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain, UserEntity>,
-        @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<SessionEntity>,
+        @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
         private readonly jwtService: JwtService,
     ) { }
 

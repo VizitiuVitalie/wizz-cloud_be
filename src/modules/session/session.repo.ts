@@ -2,9 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DbProvider } from 'src/core/db/db.provider';
 import { SessionEntity } from './domain/session.entity';
 import { SessionRepoInterface } from './interfaces/session.repo.interface';
+import { AuthTokens } from '../auth/interfaces/auth-tokens.interface';
 
 @Injectable()
-export class SessionRepo implements SessionRepoInterface<SessionEntity> {
+export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEntity> {
     constructor(private readonly dbProvider: DbProvider) { }
 
     public async save(session: SessionEntity): Promise<SessionEntity> {
@@ -60,13 +61,13 @@ export class SessionRepo implements SessionRepoInterface<SessionEntity> {
         return entity
     }
 
-    public async refreshSession(sessionId: number, newAccessToken: string, newRefreshToken: string): Promise<SessionEntity> {
+    public async refreshSession(sessionId: number, newAccessToken: string, newRefreshToken: string): Promise<AuthTokens> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
             `UPDATE sessions SET access_token = $1, refresh_token = $2, updated_at = $3 WHERE id = $4 RETURNING *`,
             [newAccessToken, newRefreshToken, new Date(), sessionId],
         )
 
-        return entity
+        return { accessToken: entity.access_token, refreshToken: entity.refresh_token }
     }
 
 
