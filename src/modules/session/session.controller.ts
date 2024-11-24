@@ -1,7 +1,7 @@
 import { Controller, Inject, Post, Body } from "@nestjs/common";
 import { SessionService } from "./session.service";
 import { SessionServiceInterface } from "./interfaces/session.service.interface";
-import { AuthTokens } from "../auth/interfaces/auth-tokens.interface";
+import { AuthTokens } from "../../shared/types/auth-tokens.type";
 import { SessionEntity } from "./domain/session.entity";
 import { RefreshSessionDto } from "./dto/refresh-session.dto";
 

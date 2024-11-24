@@ -10,7 +10,7 @@ import { UserRepoInterface } from "../user/interfaces/user.repo.interface";
 import { UserEntity } from "../user/domain/user.entity";
 import { SessionRepoInterface } from "../session/interfaces/session.repo.interface";
 import { SessionRepo } from "../session/session.repo";
-import { AuthTokens } from "./interfaces/auth-tokens.interface";
+import { AuthTokens } from "../../shared/types/auth-tokens.type";
 import { AuthServiceInterface } from "./interfaces/auth.service.interface";
 
 
