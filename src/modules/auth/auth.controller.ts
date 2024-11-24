@@ -1,8 +1,8 @@
-import { Controller, Post, Body, Param, Delete, Inject, Put } from '@nestjs/common';
+import { Controller, Post, Body, Param, Inject, UseGuards, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/auth.dto';
+import { RefreshDto, RegisterDto, LoginDto } from './dto/auth.dto';
 import { AuthServiceInterface } from './interfaces/auth.service.interface';
-import { LoginDto } from './dto/login.dto';
+import { JwtGuard } from '../../shared/jwt/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -18,8 +18,16 @@ export class AuthController {
     return this.authService.login(dto)
   }
 
-  @Delete('logout/:id')
+  @Post('logout/:id')
+  @UseGuards(JwtGuard)
   public async logout(@Param('id') id: number) {
     return this.authService.logout(id);
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtGuard)
+  public async refresh(@Headers('authorization') authHeader: string) {
+    const refreshToken = authHeader.replace('Bearer ', '');
+    return this.authService.refreshSession(refreshToken);
   }
 }

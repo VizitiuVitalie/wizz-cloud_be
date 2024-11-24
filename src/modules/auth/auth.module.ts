@@ -2,13 +2,14 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './jwt/jwt.strategy';
+import { JwtStrategy } from '../../shared/jwt/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
 import { DbModule } from 'src/core/db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Config } from 'src/core/config/config';
 import { SessionRepo } from '../session/session.repo';
+import { JwtGuard } from '../../shared/jwt/jwt.guard';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { SessionRepo } from '../session/session.repo';
     }),
     ConfigModule,
   ],
-  providers: [AuthService, JwtStrategy, SessionRepo],
+  providers: [AuthService, JwtStrategy, JwtGuard, SessionRepo],
   controllers: [AuthController],
   exports: [AuthService],
 })

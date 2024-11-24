@@ -8,6 +8,7 @@ import {
   Delete,
   UseInterceptors,
   UploadedFiles,
+  UseGuards,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ContentServiceInterface } from './interfaces/content.service.interface';
@@ -18,6 +19,7 @@ import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
 import { LocalStorage } from '../../libs/storage/local-storage.service';
 import { FileStorageI } from '../../libs/storage/interfaces/file-storage.interface';
+import { JwtGuard } from '../../shared/jwt/jwt.guard';
 
 @Controller('content')
 export class ContentController {
@@ -30,6 +32,7 @@ export class ContentController {
     private readonly localStorage: FileStorageI,
   ) {}
 
+  @UseGuards(JwtGuard)
   @Post('/:userId')
   @UseInterceptors(
     FileFieldsInterceptor([{ name: 'files', maxCount: 10 }], {
@@ -79,17 +82,20 @@ export class ContentController {
     return savedContents;
   }
 
+  @UseGuards(JwtGuard)
   @Get('ById/:id')
   public async findById(@Param('id') id: number): Promise<ContentDto | null> {
     return this.contentService.findById(id);
   }
 
+  @UseGuards(JwtGuard)
   @Get('ByUserId/:userId')
   public async findByUserId(@Param('userId') userId: number): Promise<ContentDto[] | null> {
     const content = await this.contentService.findByUserId(userId);
     return content;
   }
 
+  @UseGuards(JwtGuard) 
   @Delete(':id')
   public async deleteById(@Param('id') id: number): Promise<void> {
     return this.contentService.deleteById(id);

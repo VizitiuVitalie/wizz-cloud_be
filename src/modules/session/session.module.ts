@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SessionService } from './session.service';
-import { SessionController } from './session.controller';
 import { SessionRepo } from './session.repo';
 import { DbModule } from 'src/core/db/db.module';
 
@@ -19,8 +17,8 @@ import { DbModule } from 'src/core/db/db.module';
     }),
     DbModule,
   ],
-  providers: [SessionService, SessionRepo],
-  controllers: [SessionController],
-  exports: [SessionService],
+  providers: [SessionRepo],
+  controllers: [],
+  exports: [SessionRepo],
 })
 export class SessionModule {}
