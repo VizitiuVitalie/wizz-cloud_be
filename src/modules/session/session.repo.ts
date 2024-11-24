@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DbProvider } from 'src/core/db/db.provider';
 import { SessionEntity } from './domain/session.entity';
 import { SessionRepoInterface } from './interfaces/session.repo.interface';
-import { AuthTokens } from '../auth/interfaces/auth-tokens.interface';
+import { AuthTokens } from '../../shared/types/auth-tokens.type';
 
 @Injectable()
 export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEntity> {

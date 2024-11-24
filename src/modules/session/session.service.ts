@@ -4,7 +4,7 @@ import { SessionEntity } from './domain/session.entity';
 import { SessionRepo } from './session.repo';
 import { SessionRepoInterface } from './interfaces/session.repo.interface';
 import { JwtService } from '@nestjs/jwt';
-import { AuthTokens } from '../auth/interfaces/auth-tokens.interface';
+import { AuthTokens } from '../../shared/types/auth-tokens.type';
 
 @Injectable()
 export class SessionService implements SessionServiceInterface<AuthTokens, SessionEntity> {
