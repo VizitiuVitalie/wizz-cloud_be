@@ -15,6 +15,7 @@ import { PayloadType } from "../../shared/types/payload.type";
 import { createTokens } from "../../shared/utils/createTokens";
 import { UserService } from "../user/user.service";
 import { UserServiceInterface } from "../user/interfaces/user.service.interface";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
@@ -23,6 +24,7 @@ export class AuthService implements AuthServiceInterface {
         @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
         @Inject(UserService) private readonly userService: UserServiceInterface,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) { }
 
     private async createSession(userId: number, deviceId: string, tokens: AuthTokens): Promise<void> {
@@ -60,7 +62,7 @@ export class AuthService implements AuthServiceInterface {
         const user = await this.userService.create(newUser);
 
         const payload: PayloadType = { userId: user.id };
-        const tokens = createTokens(this.jwtService, payload);
+        const tokens = createTokens(payload, this.jwtService, this.configService);
 
         await this.createSession(user.id, dto.deviceId, tokens);
 
@@ -75,7 +77,7 @@ export class AuthService implements AuthServiceInterface {
 
         const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(user.id, dto.deviceId);
         const payload: PayloadType = { userId: user.id };
-        const tokens = createTokens(this.jwtService, payload);
+        const tokens = createTokens(payload, this.jwtService, this.configService);
 
         if (existingSession) {
             await this.updateSession(existingSession, tokens);
@@ -93,7 +95,7 @@ export class AuthService implements AuthServiceInterface {
         }
 
         const payload: PayloadType = { userId: session.user_id };
-        const tokens = createTokens(this.jwtService, payload);
+        const tokens = createTokens(payload, this.jwtService, this.configService);
 
         await this.sessionRepo.refreshSession(session.id, tokens.accessToken, tokens.refreshToken);
 
