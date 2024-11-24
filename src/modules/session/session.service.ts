@@ -9,7 +9,7 @@ import { AuthTokens } from '../auth/interfaces/auth-tokens.interface';
 @Injectable()
 export class SessionService implements SessionServiceInterface<AuthTokens, SessionEntity> {
     public constructor(
-        @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<SessionEntity>,
+        @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
         private readonly jwtService: JwtService,
     ) { }
 
