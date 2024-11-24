@@ -4,3 +4,13 @@ export class RegisterDto {
     password: string;
     deviceId: string;
 }
+
+export class LoginDto {
+    email: string;
+    password: string;
+    deviceId: string;
+}
+
+export class RefreshDto {
+    refreshToken: string;
+}

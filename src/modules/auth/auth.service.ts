@@ -2,8 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepo } from "../user/user.repo";
-import { RegisterDto } from './dto/auth.dto';
-import { LoginDto } from "./dto/login.dto";
+import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UserDomain } from "../user/domain/user.domain";
 import { SessionEntity } from "../session/domain/session.entity";
 import { UserRepoInterface } from "../user/interfaces/user.repo.interface";
@@ -12,44 +11,60 @@ import { SessionRepoInterface } from "../session/interfaces/session.repo.interfa
 import { SessionRepo } from "../session/session.repo";
 import { AuthTokens } from "../../shared/types/auth-tokens.type";
 import { AuthServiceInterface } from "./interfaces/auth.service.interface";
-
+import { PayloadType } from "../../shared/types/payload.type";
+import { createTokens } from "../../shared/utils/createTokens";
+import { UserService } from "../user/user.service";
+import { UserServiceInterface } from "../user/interfaces/user.service.interface";
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
     constructor(
         @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain, UserEntity>,
         @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
+        @Inject(UserService) private readonly userService: UserServiceInterface,
         private readonly jwtService: JwtService,
     ) { }
 
-    public async register(dto: RegisterDto): Promise<AuthTokens> {
-        const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-        const newUser: UserDomain = {
-            id: null,
-            fullName: dto.fullName,
-            email: dto.email,
-            password: hashedPassword,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        const user = await this.userRepo.save(newUser);
-
-        const accessToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '1h' });
-        const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
-
+    private async createSession(userId: number, deviceId: string, tokens: AuthTokens): Promise<void> {
         const session = new SessionEntity();
-        session.user_id = user.id;
-        session.device_id = dto.deviceId;
-        session.access_token = accessToken;
-        session.refresh_token = refreshToken;
+        session.user_id = userId;
+        session.device_id = deviceId;
+        session.access_token = tokens.accessToken;
+        session.refresh_token = tokens.refreshToken;
         session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         session.created_at = new Date();
         session.updated_at = new Date();
 
         await this.sessionRepo.save(session);
+    }
 
-        return { accessToken, refreshToken };
+    private async updateSession(session: SessionEntity, tokens: AuthTokens): Promise<void> {
+        session.access_token = tokens.accessToken;
+        session.refresh_token = tokens.refreshToken;
+        session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        session.updated_at = new Date();
+
+        await this.sessionRepo.updateSession(session);
+    }
+
+    public async register(dto: RegisterDto): Promise<AuthTokens> {
+
+        const newUser: UserDomain = {
+            id: null,
+            fullName: dto.fullName,
+            email: dto.email,
+            password: dto.password,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        const user = await this.userService.create(newUser);
+
+        const payload: PayloadType = { userId: user.id };
+        const tokens = createTokens(this.jwtService, payload);
+
+        await this.createSession(user.id, dto.deviceId, tokens);
+
+        return tokens;
     }
 
     public async login(dto: LoginDto): Promise<AuthTokens> {
@@ -58,38 +73,34 @@ export class AuthService implements AuthServiceInterface {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const existingSession: SessionEntity = await this.sessionRepo.findOneByUserIdAndDeviceId(user.id, dto.deviceId);
-        const accessToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '1h' });
-        const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
+        const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(user.id, dto.deviceId);
+        const payload: PayloadType = { userId: user.id };
+        const tokens = createTokens(this.jwtService, payload);
 
         if (existingSession) {
-            existingSession.access_token = accessToken;
-            existingSession.refresh_token = refreshToken;
-            existingSession.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-            existingSession.updated_at = new Date();
-
-            await this.sessionRepo.updateSession(existingSession);
-
+            await this.updateSession(existingSession, tokens);
         } else {
-            const newSession: SessionEntity = {
-                id: null,
-                user_id: user.id,
-                device_id: dto.deviceId,
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-                created_at: new Date(),
-                updated_at: new Date(),
-            }
-            await this.sessionRepo.save(newSession);
+            await this.createSession(user.id, dto.deviceId, tokens);
         }
 
-        return { accessToken, refreshToken }
+        return tokens;
+    }
+
+    public async refreshSession(refreshToken: string): Promise<AuthTokens> {
+        const session = await this.sessionRepo.findOneByRefreshToken(refreshToken);
+        if (!session) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        const payload: PayloadType = { userId: session.user_id };
+        const tokens = createTokens(this.jwtService, payload);
+
+        await this.sessionRepo.refreshSession(session.id, tokens.accessToken, tokens.refreshToken);
+
+        return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
     }
 
     public logout(sessionId: number): Promise<void> {
         return this.sessionRepo.deleteById(sessionId);
     }
-
-
 }
