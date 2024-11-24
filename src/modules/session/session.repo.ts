@@ -34,11 +34,20 @@ export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEnti
         return entity
     }
 
+    public async findOneByAccessToken(accessToken: string): Promise<SessionEntity> {
+        const [entity] = await this.dbProvider.query<SessionEntity>(
+            `SELECT * FROM sessions WHERE access_token = $1 LIMIT 1`,
+            [accessToken],
+        )
+
+        return entity
+    }
+
     public async findOneByRefreshToken(refreshToken: string): Promise<SessionEntity> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
             `SELECT * FROM sessions WHERE refresh_token = $1 LIMIT 1`,
             [refreshToken],
-        )
+        ) 
 
         return entity
     }

@@ -1,9 +1,16 @@
 import { JwtService } from '@nestjs/jwt';
 import { AuthTokens } from '../types/auth-tokens.type';
 import { PayloadType } from '../types/payload.type';
+import { ConfigService } from '@nestjs/config';
 
-export function createTokens(jwtService: JwtService, payload: PayloadType): AuthTokens {
-    const accessToken = jwtService.sign(payload, { expiresIn: '30s' });
-    const refreshToken = jwtService.sign(payload, { expiresIn: '7d' });
+export function createTokens(payload: PayloadType, jwtService: JwtService, configService: ConfigService): AuthTokens {
+    const accessToken = jwtService.sign(payload, {
+        secret: configService.get<string>('jwt.ACCESS_SECRET_KEY'),
+        expiresIn: '30s',
+    });
+    const refreshToken = jwtService.sign(payload, {
+        secret: configService.get<string>('jwt.REFRESH_SECRET_KEY'),
+        expiresIn: '7d',
+    });
     return { accessToken, refreshToken };
 }

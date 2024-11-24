@@ -1,20 +1,13 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { SessionRepo } from './session.repo';
 import { DbModule } from 'src/core/db/db.module';
+import { JwtConfigModule } from '../../shared/jwt/jwt-config.module';
 
 @Module({
   imports: [
     ConfigModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.JWT_SECRET'),
-        signOptions: { expiresIn: '60m' },
-      }),
-      inject: [ConfigService],
-    }),
+    JwtConfigModule,
     DbModule,
   ],
   providers: [SessionRepo],
