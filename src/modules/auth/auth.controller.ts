@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, Inject, UseGuards, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RefreshDto, RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { AuthServiceInterface } from './interfaces/auth.service.interface';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 
@@ -25,7 +25,6 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(JwtGuard)
   public async refresh(@Headers('authorization') authHeader: string) {
     const refreshToken = authHeader.replace('Bearer ', '');
     return this.authService.refreshSession(refreshToken);
