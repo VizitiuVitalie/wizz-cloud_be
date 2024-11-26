@@ -18,8 +18,8 @@ export class AuthController {
     return this.authService.login(dto)
   }
 
-  @Post('logout')
   @UseGuards(JwtGuard)
+  @Post('logout')
   public async logout(@Headers('authorization') authHeader: string) {
     const accessToken = authHeader.replace('Bearer ', '');
     await this.authService.logout(accessToken);

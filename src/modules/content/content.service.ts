@@ -29,6 +29,10 @@ export class ContentService implements ContentServiceInterface {
     return result;
   }
 
+  public async update(domain: ContentDomain): Promise<ContentDomain> {
+    return this.contentRepo.update(domain);
+  }
+
   public async deleteById(id: number): Promise<void> {
     return this.contentRepo.deleteById(id);
   }
