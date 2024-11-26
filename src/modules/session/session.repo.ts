@@ -47,11 +47,11 @@ export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEnti
         const [entity] = await this.dbProvider.query<SessionEntity>(
             `SELECT * FROM sessions WHERE refresh_token = $1 LIMIT 1`,
             [refreshToken],
-        ) 
+        )
 
         return entity
     }
-    
+
     public async findOneByUserIdAndDeviceId(userId: number, deviceId: string): Promise<SessionEntity> {
         const [entity] = await this.dbProvider.query<SessionEntity>(
             `SELECT * FROM sessions WHERE user_id = $1 AND device_id = $2 LIMIT 1`,
@@ -80,10 +80,10 @@ export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEnti
     }
 
 
-    public async deleteById(id: number): Promise<void> {
+    public async deleteByAccessToken(accessToken: string): Promise<void> {
         await this.dbProvider.query(
-            `DELETE FROM sessions WHERE id = $1`,
-            [id],
+            `DELETE FROM sessions WHERE access_token = $1`,
+            [accessToken]
         )
     }
 }

@@ -18,10 +18,12 @@ export class AuthController {
     return this.authService.login(dto)
   }
 
-  @Post('logout/:id')
+  @Post('logout')
   @UseGuards(JwtGuard)
-  public async logout(@Param('id') id: number) {
-    return this.authService.logout(id);
+  public async logout(@Headers('authorization') authHeader: string) {
+    const accessToken = authHeader.replace('Bearer ', '');
+    await this.authService.logout(accessToken);
+    return { message: 'Logged out successfully' };
   }
 
   @Post('refresh')
