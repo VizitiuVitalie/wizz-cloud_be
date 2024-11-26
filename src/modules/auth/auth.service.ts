@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepo } from "../user/user.repo";
@@ -102,7 +102,12 @@ export class AuthService implements AuthServiceInterface {
         return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
     }
 
-    public logout(sessionId: number): Promise<void> {
-        return this.sessionRepo.deleteById(sessionId);
+    public async logout(accessToken: string): Promise<void> {
+        const session = await this.sessionRepo.findOneByAccessToken(accessToken);
+        if (!session) {
+            throw new ForbiddenException('Session not found');
+        }
+
+        await this.sessionRepo.deleteByAccessToken(accessToken);
     }
 }

@@ -5,5 +5,5 @@ export interface AuthServiceInterface {
     register(dto: RegisterDto): Promise<AuthTokens>;
     login(dto: LoginDto): Promise<AuthTokens>;
     refreshSession(refreshToken: string): Promise<AuthTokens>;
-    logout(sessionId: number): Promise<void>;
+    logout(accessToken: string): Promise<void>;
 }
