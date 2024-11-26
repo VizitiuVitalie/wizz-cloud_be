@@ -61,7 +61,6 @@ export class ContentController {
   public async uploadContent(
     @Param('userId') userId: number,
     @UploadedFiles() files: { files?: Express.Multer.File[] },
-    @Body() dto: CreateContentDto,
   ): Promise<ContentDto[]> {
     if (!files?.files?.length) {
       throw new Error('No files uploaded');
@@ -151,10 +150,13 @@ export class ContentController {
   )
   public async updateContent(
     @Param('id') id: number,
-    @UploadedFiles() files: { file?: Express.Multer.File[] },
-    @Body() dto: CreateContentDto,
+    @UploadedFiles() files: { files?: Express.Multer.File[] },
+    @Req() req: Request,
   ): Promise<ContentDto> {
-    if (!files?.file?.length) {
+    console.log('Uploaded files:', files); // Логирование загруженных файлов
+
+
+    if (!files?.files?.length) {
       throw new Error('No files uploaded');
     }
 
@@ -163,11 +165,13 @@ export class ContentController {
       throw new NotFoundException('Content not found');
     }
 
-    if (content.userId !== dto.userId) {
+    const user = req.user as UserDto;
+
+    if (content.userId !== user.id) {
       throw new ForbiddenException('You do not have permission to update this content');
     }
 
-    const file = files.file[0];
+    const file = files.files[0];
     const fileUrl = await this.localStorage.save(
       file,
       `/home/wizzdev/Desktop/cloud_storage/`
@@ -179,18 +183,21 @@ export class ContentController {
     content.updatedAt = new Date();
 
     const updatedDomain = await this.contentService.update(content);
+
     return this.contentAdapter.FromDomainToDto(updatedDomain);
   }
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  public async deleteById(@Param('id') id: number, @Res() res: Response): Promise<void> {
+  public async deleteById(@Param('id') id: number, @Req() req: Request): Promise<void> {
     const content = await this.contentService.findById(id);
     if (!content) {
       throw new NotFoundException('File not found');
     }
 
-    if (content.userId !== res.locals.user.id) {
+    const user = req.user as UserDto;
+
+    if (content.userId !== user.id) {
       throw new ForbiddenException('You do not have permission to delete this file');
     }
 
