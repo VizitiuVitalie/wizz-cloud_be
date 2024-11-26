@@ -4,11 +4,16 @@ import {
   Body,
   Post,
   Get,
+  Put,
   Param,
   Delete,
   UseInterceptors,
   UploadedFiles,
   UseGuards,
+  Req,
+  Res,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ContentServiceInterface } from './interfaces/content.service.interface';
@@ -20,6 +25,11 @@ import { ContentDto } from './dto/content.dto';
 import { LocalStorage } from '../../libs/storage/local-storage.service';
 import { FileStorageI } from '../../libs/storage/interfaces/file-storage.interface';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
+import { Request, Response } from 'express';
+import { UserDto } from '../user/dto/user.dto';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+
 
 @Controller('content')
 export class ContentController {
@@ -30,7 +40,7 @@ export class ContentController {
     private readonly contentAdapter: ContentAdapterInterface,
     @Inject(LocalStorage)
     private readonly localStorage: FileStorageI,
-  ) {}
+  ) { }
 
   @UseGuards(JwtGuard)
   @Post('/:userId')
@@ -48,7 +58,7 @@ export class ContentController {
       },
     }),
   )
-  public async uploadFiles(
+  public async uploadContent(
     @Param('userId') userId: number,
     @UploadedFiles() files: { files?: Express.Multer.File[] },
     @Body() dto: CreateContentDto,
@@ -95,9 +105,96 @@ export class ContentController {
     return content;
   }
 
-  @UseGuards(JwtGuard) 
+  @UseGuards(JwtGuard)
+  @Get('download/:id')
+  public async downloadContent(@Param('id') id: number, @Req() req: Request, @Res() res: Response): Promise<void> {
+    const content = await this.contentService.findById(id);
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    const user = req.user as UserDto;
+
+    if (content.userId !== user.id) {
+      throw new ForbiddenException('You do not have permission to download this content');
+    }
+
+    const filePath = path.resolve(content.url);
+
+    try {
+      await fs.access(filePath); // Проверка существования файла
+      res.download(filePath, (err) => {
+        if (err) {
+          throw new NotFoundException('File not found');
+        }
+      });
+    } catch (err) {
+      throw new NotFoundException('File not found');
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @Put('update/:id')
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'files', maxCount: 1 }], {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, callback) => {
+        if (
+          ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)
+        ) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
+      },
+    }),
+  )
+  public async updateContent(
+    @Param('id') id: number,
+    @UploadedFiles() files: { file?: Express.Multer.File[] },
+    @Body() dto: CreateContentDto,
+  ): Promise<ContentDto> {
+    if (!files?.file?.length) {
+      throw new Error('No files uploaded');
+    }
+
+    const content = await this.contentService.findById(id);
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    if (content.userId !== dto.userId) {
+      throw new ForbiddenException('You do not have permission to update this content');
+    }
+
+    const file = files.file[0];
+    const fileUrl = await this.localStorage.save(
+      file,
+      `/home/wizzdev/Desktop/cloud_storage/`
+    );
+
+    content.url = fileUrl;
+    content.type = file.mimetype;
+    content.size = file.size;
+    content.updatedAt = new Date();
+
+    const updatedDomain = await this.contentService.update(content);
+    return this.contentAdapter.FromDomainToDto(updatedDomain);
+  }
+
+  @UseGuards(JwtGuard)
   @Delete(':id')
-  public async deleteById(@Param('id') id: number): Promise<void> {
+  public async deleteById(@Param('id') id: number, @Res() res: Response): Promise<void> {
+    const content = await this.contentService.findById(id);
+    if (!content) {
+      throw new NotFoundException('File not found');
+    }
+
+    if (content.userId !== res.locals.user.id) {
+      throw new ForbiddenException('You do not have permission to delete this file');
+    }
+
+    await this.localStorage.delete(content.url);
     return this.contentService.deleteById(id);
   }
 }

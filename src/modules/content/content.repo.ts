@@ -12,7 +12,7 @@ export class ContentRepo implements ContentRepoInterface<ContentDomain, ContentE
     private readonly dbProvider: DbProvider,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
-  ) {}
+  ) { }
 
   public async save(domain: ContentDomain): Promise<ContentDomain> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
@@ -51,14 +51,23 @@ export class ContentRepo implements ContentRepoInterface<ContentDomain, ContentE
       [userId],
     );
     console.log(entities);
-    
+
     if (!entities.length) {
       return undefined;
     }
     return entities.map((entity) => this.contentAdapter.FromEntityToDomain(entity));
   }
 
+  public async update(domain: ContentDomain): Promise<ContentDomain> {
+    const [entity] = await this.dbProvider.query<ContentEntity>(
+      `UPDATE content SET type = $1, url = $2, size = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
+      [domain.type, domain.url, domain.size, domain.updatedAt, domain.id],
+    );
+
+    return this.contentAdapter.FromEntityToDomain(entity);
+  }
+
   public async deleteById(id: number): Promise<void> {
-    await this.dbProvider.query(`DELETE FROM content * WHERE id = $1`[id]);
+    await this.dbProvider.query(`DELETE FROM content * WHERE id = $1`, [id]);
   }
 }

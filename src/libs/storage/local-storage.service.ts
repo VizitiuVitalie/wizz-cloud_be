@@ -12,4 +12,8 @@ export class LocalStorage implements FileStorageI {
         await fs.writeFile(filePath, file.buffer)
         return filePath;
     }
+
+    public async delete(filePath: string): Promise<void> {
+        await fs.unlink(filePath);
+    }
 }
