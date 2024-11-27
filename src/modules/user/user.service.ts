@@ -18,23 +18,4 @@ export class UserService implements UserServiceInterface {
     domain.password = hashedPassword;
     return this.userRepo.save(domain);
   }
-
-  public async findById(id: number): Promise<UserDomain | null> {
-    const result = await this.userRepo.findById(id);
-    console.log('service: ', result);
-    return result
-  }
-
-  public async findAll(): Promise<UserDomain[] | null> {
-    const result = await this.userRepo.findAll();
-    return result
-  }
-
-  public async updateById(domain: UserDomain): Promise<UserDomain> {
-    return this.userRepo.updateById(domain);
-  }
-
-  public async deleteById(id: number): Promise<void> {
-    await this.userRepo.deleteById(id);
-  }
 }

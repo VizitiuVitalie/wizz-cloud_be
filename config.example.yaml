@@ -1,16 +1,19 @@
 #before using, remove ".example" in this file's naming.
 
 http:
-  port: 8080
+  port: port number
 
 db:
   postgres:
-    user: your_db_user
+    user: user
     port: 5432
     host: localhost
-    database: your_db_name
-    password: your_db_password
+    database: your database name
+    password: "your pawssword"
 
-security:
-  accessToken_secret_key: your_accessToken_secret_key
-  refreshToken_secret_key: your_refreshToken_secret_key
+jwt:
+  ACCESS_SECRET_KEY: youraccesssecretkey
+  REFRESH_SECRET_KEY: yourrefreshsecretkey
+
+cloud_storage:
+  path: "/your/path/to/storage/"

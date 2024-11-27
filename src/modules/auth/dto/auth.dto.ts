@@ -10,7 +10,3 @@ export class LoginDto {
     password: string;
     deviceId: string;
 }
-
-export class RefreshDto {
-    refreshToken: string;
-}

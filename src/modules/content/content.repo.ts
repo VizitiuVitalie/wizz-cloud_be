@@ -45,19 +45,6 @@ export class ContentRepo implements ContentRepoInterface<ContentDomain, ContentE
     return this.contentAdapter.FromEntityToDomain(entity);
   }
 
-  public async findByUserId(userId: number): Promise<ContentDomain[] | null> {
-    const entities = await this.dbProvider.query<ContentEntity>(
-      `SELECT * FROM content WHERE user_id = $1`,
-      [userId],
-    );
-    console.log(entities);
-
-    if (!entities.length) {
-      return undefined;
-    }
-    return entities.map((entity) => this.contentAdapter.FromEntityToDomain(entity));
-  }
-
   public async update(domain: ContentDomain): Promise<ContentDomain> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
       `UPDATE content SET type = $1, url = $2, size = $3, updated_at = $4 WHERE id = $5 RETURNING *`,

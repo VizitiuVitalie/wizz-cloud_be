@@ -11,7 +11,7 @@ import { PayloadType } from 'src/shared/types/payload.type';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
-        private readonly configService: ConfigService,
+        configService: ConfigService,
         @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDto, UserEntity>,
     ) {
         super({
