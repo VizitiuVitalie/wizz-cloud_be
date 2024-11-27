@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DbProvider } from 'src/core/db/db.provider';
 import { SessionEntity } from './domain/session.entity';
 import { SessionRepoInterface } from './interfaces/session.repo.interface';
@@ -20,15 +20,6 @@ export class SessionRepo implements SessionRepoInterface<AuthTokens, SessionEnti
                 session.created_at,
                 session.updated_at,
             ],
-        )
-
-        return entity
-    }
-
-    public async findOneByUserId(userId: number): Promise<SessionEntity> {
-        const [entity] = await this.dbProvider.query<SessionEntity>(
-            `SELECT * FROM sessions WHERE user_id = $1 LIMIT 1`,
-            [userId],
         )
 
         return entity

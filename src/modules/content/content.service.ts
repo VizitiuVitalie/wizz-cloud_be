@@ -15,17 +15,12 @@ export class ContentService implements ContentServiceInterface {
     >,
   ) {}
 
-  public async create(domain: ContentDomain): Promise<ContentDomain> {
+  public async uploadContent(domain: ContentDomain): Promise<ContentDomain> {
     return this.contentRepo.save(domain);
   }
 
   public async findById(id: number): Promise<ContentDomain | null> {
     const result = await this.contentRepo.findById(id);
-    return result;
-  }
-
-  public async findByUserId(userId: number): Promise<ContentDomain[] | null> {
-    const result = await this.contentRepo.findByUserId(userId);
     return result;
   }
 

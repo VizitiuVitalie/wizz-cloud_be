@@ -1,7 +1,6 @@
 import {
   Controller,
   Inject,
-  Body,
   Post,
   Get,
   Put,
@@ -23,24 +22,31 @@ import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
 import { LocalStorage } from '../../libs/storage/local-storage.service';
-import { FileStorageI } from '../../libs/storage/interfaces/file-storage.interface';
+import { ContentStorageI } from '../../libs/storage/interfaces/file-storage.interface';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { ConfigService } from '@nestjs/config';
+
 
 
 @Controller('content')
 export class ContentController {
+  private readonly storagePath: string;
+
   constructor(
     @Inject(ContentService)
     private readonly contentService: ContentServiceInterface,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
     @Inject(LocalStorage)
-    private readonly localStorage: FileStorageI,
-  ) { }
+    private readonly localStorage: ContentStorageI,
+    private readonly configService: ConfigService,
+  ) {
+    this.storagePath = this.configService.get<string>('cloud_storage.path');
+  }
 
   @UseGuards(JwtGuard)
   @Post('/:userId')
@@ -69,10 +75,8 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-      const fileUrl = await this.localStorage.save(
-        file,
-        `/home/wizzdev/Desktop/cloud_storage/`,
-      );
+          const fileUrl = await this.localStorage.save(file, this.storagePath);
+
 
       const contentData: CreateContentDto = {
         id: null,
@@ -83,25 +87,12 @@ export class ContentController {
       };
 
       const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
-      const createdDomain = await this.contentService.create(domain);
+      const createdDomain = await this.contentService.uploadContent(domain);
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
     }
 
     return savedContents;
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('ById/:id')
-  public async findById(@Param('id') id: number): Promise<ContentDto | null> {
-    return this.contentService.findById(id);
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('ByUserId/:userId')
-  public async findByUserId(@Param('userId') userId: number): Promise<ContentDto[] | null> {
-    const content = await this.contentService.findByUserId(userId);
-    return content;
   }
 
   @UseGuards(JwtGuard)
@@ -121,7 +112,7 @@ export class ContentController {
     const filePath = path.resolve(content.url);
 
     try {
-      await fs.access(filePath); // Проверка существования файла
+      await fs.access(filePath);
       res.download(filePath, (err) => {
         if (err) {
           throw new NotFoundException('File not found');
@@ -153,8 +144,6 @@ export class ContentController {
     @UploadedFiles() files: { files?: Express.Multer.File[] },
     @Req() req: Request,
   ): Promise<ContentDto> {
-    console.log('Uploaded files:', files); // Логирование загруженных файлов
-
 
     if (!files?.files?.length) {
       throw new Error('No files uploaded');
@@ -172,10 +161,8 @@ export class ContentController {
     }
 
     const file = files.files[0];
-    const fileUrl = await this.localStorage.save(
-      file,
-      `/home/wizzdev/Desktop/cloud_storage/`
-    );
+    const fileUrl = await this.localStorage.save(file, this.storagePath);
+
 
     content.url = fileUrl;
     content.type = file.mimetype;
