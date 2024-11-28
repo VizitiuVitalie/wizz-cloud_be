@@ -9,6 +9,8 @@ async function bootstrap() {
 
   const httpConfig = app.get(ConfigService).get<HttpConfig>(ConfigEnums.HTTP);
 
+  app.setGlobalPrefix('wizzcloud');
+
   await app.listen(httpConfig.port, () => {
     console.log(`app is listening on port ${httpConfig.port}`);
   });
