@@ -7,12 +7,14 @@ import { ContentAdapterInterface } from './interfaces/content.adapter.interface'
 import { ContentAdapter } from './content.adapter';
 
 @Injectable()
-export class ContentRepo implements ContentRepoInterface<ContentDomain, ContentEntity> {
+export class ContentRepo
+  implements ContentRepoInterface<ContentDomain, ContentEntity>
+{
   constructor(
     private readonly dbProvider: DbProvider,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
-  ) { }
+  ) {}
 
   public async save(domain: ContentDomain): Promise<ContentDomain> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
@@ -43,6 +45,17 @@ export class ContentRepo implements ContentRepoInterface<ContentDomain, ContentE
     }
 
     return this.contentAdapter.FromEntityToDomain(entity);
+  }
+
+  public async findByUserId(userId: number): Promise<ContentDomain[]> {
+    const entities = await this.dbProvider.query<ContentEntity>(
+      `SELECT * FROM content WHERE user_id = $1`,
+      [userId],
+    );
+
+    return entities.map((entity) =>
+      this.contentAdapter.FromEntityToDomain(entity),
+    );
   }
 
   public async update(domain: ContentDomain): Promise<ContentDomain> {

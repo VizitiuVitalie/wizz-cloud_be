@@ -29,6 +29,7 @@ import { UserDto } from '../user/dto/user.dto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
+import { ContentDomain } from './domain/content.domain';
 
 
 
@@ -93,6 +94,14 @@ export class ContentController {
     }
 
     return savedContents;
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('list')
+  public async getUserContent(@Req() req: Request): Promise<ContentDto[]> {
+    const user = req.user as UserDto;
+    const contents = await this.contentService.findByUserId(user.id);
+    return contents.map((content: ContentDomain) => this.contentAdapter.FromDomainToDto(content));
   }
 
   @UseGuards(JwtGuard)

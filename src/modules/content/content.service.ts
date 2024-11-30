@@ -8,11 +8,7 @@ import { ContentEntity } from './domain/content.entity';
 @Injectable()
 export class ContentService implements ContentServiceInterface {
   constructor(
-    @Inject(ContentRepo)
-    private readonly contentRepo: ContentRepoInterface<
-      ContentDomain,
-      ContentEntity
-    >,
+    @Inject(ContentRepo) private readonly contentRepo: ContentRepoInterface<ContentDomain, ContentEntity>,
   ) {}
 
   public async uploadContent(domain: ContentDomain): Promise<ContentDomain> {
@@ -22,6 +18,10 @@ export class ContentService implements ContentServiceInterface {
   public async findById(id: number): Promise<ContentDomain | null> {
     const result = await this.contentRepo.findById(id);
     return result;
+  }
+
+  public async findByUserId(userId: number): Promise<ContentDomain[]> {
+    return this.contentRepo.findByUserId(userId);
   }
 
   public async update(domain: ContentDomain): Promise<ContentDomain> {
