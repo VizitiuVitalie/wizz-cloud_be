@@ -18,4 +18,9 @@ export class UserService implements UserServiceInterface {
     domain.password = hashedPassword;
     return this.userRepo.save(domain);
   }
+
+  public async getFullName(userId: number): Promise<string> {
+    const fullName = await this.userRepo.getFullName(userId);
+    return fullName;
+  }
 }

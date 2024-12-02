@@ -31,8 +31,6 @@ import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
 import { ContentDomain } from './domain/content.domain';
 
-
-
 @Controller('content')
 export class ContentController {
   private readonly storagePath: string;
@@ -76,8 +74,7 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-          const fileUrl = await this.localStorage.save(file, this.storagePath);
-
+      const fileUrl = await this.localStorage.save(file, this.storagePath);
 
       const contentData: CreateContentDto = {
         id: null,
@@ -87,7 +84,8 @@ export class ContentController {
         size: file.size,
       };
 
-      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain =
+        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(domain);
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
@@ -101,36 +99,42 @@ export class ContentController {
   public async getUserContent(@Req() req: Request): Promise<ContentDto[]> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
-    return contents.map((content: ContentDomain) => this.contentAdapter.FromDomainToDto(content));
+    return contents.map((content: ContentDomain) =>
+      this.contentAdapter.FromDomainToDto(content),
+    );
   }
 
   @UseGuards(JwtGuard)
-  @Get('download/:id')
-  public async downloadContent(@Param('id') id: number, @Req() req: Request, @Res() res: Response): Promise<void> {
-    const content = await this.contentService.findById(id);
-    if (!content) {
-      throw new NotFoundException('Content not found');
-    }
-
-    const user = req.user as UserDto;
-
-    if (content.userId !== user.id) {
-      throw new ForbiddenException('You do not have permission to download this content');
-    }
-
-    const filePath = path.resolve(content.url);
-
-    try {
-      await fs.access(filePath);
-      res.download(filePath, (err) => {
-        if (err) {
-          throw new NotFoundException('File not found');
-        }
-      });
-    } catch (err) {
-      throw new NotFoundException('File not found');
-    }
+@Get('download/:id')
+public async downloadContent(
+  @Param('id') id: number,
+  @Req() req: Request,
+  @Res() res: Response,
+): Promise<void> {
+  const content = await this.contentService.findById(id);
+  if (!content) {
+    throw new NotFoundException('Content not found');
   }
+
+  const user = req.user as UserDto;
+  if (content.userId !== user.id) {
+    throw new ForbiddenException('You do not have permission to download this content');
+  }
+
+  const filePath = path.resolve(content.url);
+  const fileName = path.basename(filePath);
+
+  try {
+    await fs.access(filePath);
+    res.set({
+      'Content-Type': content.type, // Устанавливаем MIME-тип файла
+      'Content-Disposition': `attachment; filename="${fileName}"`, // Указываем имя файла
+    });
+    res.sendFile(filePath);
+  } catch (err) {
+    throw new NotFoundException('File not found');
+  }
+}
 
   @UseGuards(JwtGuard)
   @Put('update/:id')
@@ -153,7 +157,6 @@ export class ContentController {
     @UploadedFiles() files: { files?: Express.Multer.File[] },
     @Req() req: Request,
   ): Promise<ContentDto> {
-
     if (!files?.files?.length) {
       throw new Error('No files uploaded');
     }
@@ -166,12 +169,13 @@ export class ContentController {
     const user = req.user as UserDto;
 
     if (content.userId !== user.id) {
-      throw new ForbiddenException('You do not have permission to update this content');
+      throw new ForbiddenException(
+        'You do not have permission to update this content',
+      );
     }
 
     const file = files.files[0];
     const fileUrl = await this.localStorage.save(file, this.storagePath);
-
 
     content.url = fileUrl;
     content.type = file.mimetype;
@@ -185,7 +189,10 @@ export class ContentController {
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  public async deleteById(@Param('id') id: number, @Req() req: Request): Promise<void> {
+  public async deleteById(
+    @Param('id') id: number,
+    @Req() req: Request,
+  ): Promise<void> {
     const content = await this.contentService.findById(id);
     if (!content) {
       throw new NotFoundException('File not found');
@@ -194,7 +201,9 @@ export class ContentController {
     const user = req.user as UserDto;
 
     if (content.userId !== user.id) {
-      throw new ForbiddenException('You do not have permission to delete this file');
+      throw new ForbiddenException(
+        'You do not have permission to delete this file',
+      );
     }
 
     await this.localStorage.delete(content.url);

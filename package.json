@@ -26,6 +26,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/serve-static": "^2.2.2",
     "bcryptjs": "^2.4.3",
     "js-yaml": "^4.1.0",
     "multer-s3": "^3.0.1",
