@@ -44,6 +44,7 @@ lerna-debug.log*
 
 # Ignore configuration files with sensitive data
 config.yaml
+cloud_storage
 
 # temp directory
 .temp

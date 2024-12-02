@@ -11,7 +11,7 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
   constructor(
     private readonly dbProvider: DbProvider,
     @Inject(UserAdapter) private readonly userAdapter: UserAdapterInterface,
-  ) { }
+  ) {}
 
   public async save(domain: UserDomain): Promise<UserDomain> {
     const [entity] = await this.dbProvider.query<UserEntity>(
@@ -26,6 +26,15 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
     );
 
     return this.userAdapter.FromEntityToDomain(entity);
+  }
+
+  public async getFullName(userId: number): Promise<string> {
+    const result = await this.dbProvider.query<{ full_name: string }>(
+      `SELECT full_name FROM users WHERE id = $1`,
+      [userId],
+    );
+
+    return result[0].full_name;
   }
 
   public async findById(id: number): Promise<UserDomain | null> {
@@ -57,9 +66,8 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
   }
 
   public async findAll(): Promise<UserDomain[] | null> {
-    const entities = await this.dbProvider.query<UserEntity>(
-      `SELECT * FROM users;`
-    )
+    const entities =
+      await this.dbProvider.query<UserEntity>(`SELECT * FROM users;`);
 
     console.log('repo: ', entities);
 
@@ -67,7 +75,9 @@ export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
       return null;
     }
 
-    return entities.map((entity) => this.userAdapter.FromEntityToDomain(entity));
+    return entities.map((entity) =>
+      this.userAdapter.FromEntityToDomain(entity),
+    );
   }
 
   public async updateById(domain: UserDomain): Promise<UserDomain> {
