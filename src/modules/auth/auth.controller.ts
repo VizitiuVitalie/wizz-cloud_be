@@ -17,6 +17,12 @@ export class AuthController {
   public async login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
   }
+  
+  @Post('refresh')
+  public async refresh(@Headers('authorization') authHeader: string) {
+    const refreshToken = authHeader.replace('Bearer ', '');
+    return this.authService.refreshSession(refreshToken);
+  }
 
   @UseGuards(JwtGuard)
   @Post('logout')
@@ -24,11 +30,5 @@ export class AuthController {
     const accessToken = authHeader.replace('Bearer ', '');
     await this.authService.logout(accessToken);
     return { message: 'Logged out successfully' };
-  }
-
-  @Post('refresh')
-  public async refresh(@Headers('authorization') authHeader: string) {
-    const refreshToken = authHeader.replace('Bearer ', '');
-    return this.authService.refreshSession(refreshToken);
   }
 }
