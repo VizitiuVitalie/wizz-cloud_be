@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { ContentStorageI } from './interfaces/file-storage.interface';
+import { ContentStorageI } from './interfaces/content-storage.interface';
 import { v4 as uuidv4 } from 'uuid';
 
 
