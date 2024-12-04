@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ContentController } from './content.controller';
 import { ContentService } from './content.service';
 import { ContentAdapter } from './content.adapter';
-import { StorageModule } from '../../libs/storage/storage.module';
+import { StorageModule } from '../../libs/local-storage/local-storage.module';
 import { ContentRepo } from './content.repo';
 import { DbModule } from 'src/core/db/db.module';
 
