@@ -7,6 +7,7 @@ import { ContentEntity } from './domain/content.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { ConfigService } from '@nestjs/config';
+import { AwsService } from 'src/libs/aws/aws.service';
 
 @Injectable()
 export class ContentService implements ContentServiceInterface {
@@ -18,6 +19,7 @@ export class ContentService implements ContentServiceInterface {
       ContentEntity
     >,
     private readonly configService: ConfigService,
+    private readonly awsService: AwsService,
   ) {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
   }
@@ -28,6 +30,21 @@ export class ContentService implements ContentServiceInterface {
   }
 
   public async uploadContent(domain: ContentDomain): Promise<ContentDomain> {
+    const file: Express.Multer.File = {
+      fieldname: 'file',
+      originalname: '',
+      encoding: '7bit',
+      mimetype: domain.type,
+      size: domain.size,
+      stream: null,
+      destination: '',
+      filename: '',
+      path: '',
+      buffer: null,
+    };
+    
+    const fileKey = await this.awsService.save(file);
+    domain.url = await this.awsService.generatePublicUrl(fileKey);
     return this.contentRepo.save(domain);
   }
 

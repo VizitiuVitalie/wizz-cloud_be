@@ -78,14 +78,14 @@ export class ContentController {
 
       const contentData: CreateContentDto = {
         id: null,
+        name: file.originalname,
         userId: userId,
         url: fileUrl,
         type: file.mimetype,
         size: file.size,
       };
 
-      const domain =
-        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(domain);
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
