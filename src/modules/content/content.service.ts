@@ -5,16 +5,22 @@ import { ContentRepoInterface } from './interfaces/content.repo.interface';
 import { ContentDomain } from './domain/content.domain';
 import { ContentEntity } from './domain/content.entity';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ContentService implements ContentServiceInterface {
+  private readonly storagePath: string;
   constructor(
     @Inject(ContentRepo)
     private readonly contentRepo: ContentRepoInterface<
       ContentDomain,
       ContentEntity
     >,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.storagePath = this.configService.get<string>('cloud_storage.path');
+  }
 
   private generatePublicUrl(filePath: string): string {
     const fileName = path.basename(filePath);
@@ -45,5 +51,26 @@ export class ContentService implements ContentServiceInterface {
 
   public async deleteById(id: number): Promise<void> {
     return this.contentRepo.deleteById(id);
+  }
+
+  public async deleteUserFiles(userId: number): Promise<void> {
+    const files = await this.contentRepo.getUrlsByUserId(userId);
+
+    if (!files || files.length === 0) {
+      console.log(`No files found for user ${userId}`);
+      return;
+    }
+
+    console.log(`Cloud storage path: ${this.storagePath}`);
+
+    for (const file of files) {
+      const filePath = path.resolve(this.storagePath, path.basename(file.url));
+      try {
+        await fs.unlink(filePath);
+        console.log(`Deleted file: ${filePath}`);
+      } catch (err) {
+        console.error(`Error deleting file: ${filePath}`, err);
+      }
+    }
   }
 }

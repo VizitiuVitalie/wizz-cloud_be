@@ -32,6 +32,15 @@ export class ContentRepo
     return this.contentAdapter.FromEntityToDomain(entity);
   }
 
+  public async getUrlsByUserId(userId: number): Promise<{ url: string }[]> {
+    const entities = await this.dbProvider.query<{ url: string }>(
+      `SELECT url FROM content WHERE user_id = $1`,
+      [userId],
+    );
+
+    return entities;
+  }
+
   public async findById(id: number): Promise<ContentDomain | null> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
       `SELECT * FROM content WHERE id = $1 LIMIT 1`,

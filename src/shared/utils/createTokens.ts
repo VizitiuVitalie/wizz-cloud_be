@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 export function createTokens(payload: PayloadType, jwtService: JwtService, configService: ConfigService): AuthTokens {
     const accessToken = jwtService.sign(payload, {
         secret: configService.get<string>('jwt.ACCESS_SECRET_KEY'),
-        expiresIn: '10s',
+        expiresIn: '3m',
     });
     const refreshToken = jwtService.sign(payload, {
         secret: configService.get<string>('jwt.REFRESH_SECRET_KEY'),

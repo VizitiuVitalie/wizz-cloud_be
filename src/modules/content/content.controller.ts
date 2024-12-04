@@ -105,36 +105,38 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-@Get('download/:id')
-public async downloadContent(
-  @Param('id') id: number,
-  @Req() req: Request,
-  @Res() res: Response,
-): Promise<void> {
-  const content = await this.contentService.findById(id);
-  if (!content) {
-    throw new NotFoundException('Content not found');
-  }
+  @Get('download/:id')
+  public async downloadContent(
+    @Param('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const content = await this.contentService.findById(id);
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
 
-  const user = req.user as UserDto;
-  if (content.userId !== user.id) {
-    throw new ForbiddenException('You do not have permission to download this content');
-  }
+    const user = req.user as UserDto;
+    if (content.userId !== user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to download this content',
+      );
+    }
 
-  const filePath = path.resolve(content.url);
-  const fileName = path.basename(filePath);
+    const filePath = path.resolve(content.url);
+    const fileName = path.basename(filePath);
 
-  try {
-    await fs.access(filePath);
-    res.set({
-      'Content-Type': content.type, // Устанавливаем MIME-тип файла
-      'Content-Disposition': `attachment; filename="${fileName}"`, // Указываем имя файла
-    });
-    res.sendFile(filePath);
-  } catch (err) {
-    throw new NotFoundException('File not found');
+    try {
+      await fs.access(filePath);
+      res.set({
+        'Content-Type': content.type,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+      });
+      res.sendFile(filePath);
+    } catch (err) {
+      throw new NotFoundException('File not found');
+    }
   }
-}
 
   @UseGuards(JwtGuard)
   @Put('update/:id')
