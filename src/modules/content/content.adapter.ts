@@ -11,6 +11,7 @@ export class ContentAdapter implements ContentAdapterInterface {
     return {
       id: dto.id,
       userId: dto.userId,
+      name: dto.name,
       type: dto.type,
       url: dto.url,
       size: dto.size,
@@ -23,6 +24,7 @@ export class ContentAdapter implements ContentAdapterInterface {
     return {
       id: domain.id,
       userId: domain.userId,
+      name: domain.name,
       type: domain.type,
       url: domain.url,
       size: domain.size,
@@ -35,6 +37,7 @@ export class ContentAdapter implements ContentAdapterInterface {
     return {
       id: domain.id,
       user_id: domain.userId,
+      name: domain.name,
       type: domain.type,
       url: domain.url,
       size: domain.size,
@@ -47,6 +50,7 @@ export class ContentAdapter implements ContentAdapterInterface {
     return {
       id: entity.id,
       userId: entity.user_id,
+      name: entity.name,
       type: entity.type,
       url: entity.url,
       size: entity.size,
@@ -59,6 +63,7 @@ export class ContentAdapter implements ContentAdapterInterface {
     return {
       id: dto.id,
       userId: dto.userId,
+      name: dto.name,
       type: dto.type,
       url: dto.url,
       size: dto.size,

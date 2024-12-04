@@ -18,9 +18,10 @@ export class ContentRepo
 
   public async save(domain: ContentDomain): Promise<ContentDomain> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
-      `INSERT INTO content (user_id, type, url, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      `INSERT INTO content (user_id, name, type, url, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [
         domain.userId,
+        domain.name,
         domain.type,
         domain.url,
         domain.size,

@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SessionModule } from './modules/session/session.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AwsModule } from './libs/aws/aws.module';
 
 
 
@@ -26,6 +27,7 @@ import { join } from 'path';
     SessionModule,
     ContentModule,
     StorageModule,
+    AwsModule,
   ],
 })
 export class AppModule { }
