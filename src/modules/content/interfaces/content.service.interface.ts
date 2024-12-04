@@ -6,4 +6,5 @@ export interface ContentServiceInterface {
   findByUserId(id: number): Promise<ContentDomain[]>;
   update(domain: ContentDomain): Promise<ContentDomain>;
   deleteById(id: number): Promise<void>;
+  deleteUserFiles(userId: number): Promise<void>;
 }

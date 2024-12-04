@@ -23,4 +23,8 @@ export class UserService implements UserServiceInterface {
     const fullName = await this.userRepo.getFullName(userId);
     return fullName;
   }
+
+  public async deleteUser(id: number): Promise<void> {
+    await this.userRepo.deleteById(id);
+  }
 }
