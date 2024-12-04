@@ -22,7 +22,7 @@ import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
 import { LocalStorage } from '../../libs/local-storage/local-storage.service';
-import { ContentStorageI } from '../../libs/local-storage/interfaces/content-storage.interface';
+import { LocalStorageI } from '../../libs/local-storage/interfaces/local-storage.interface';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
@@ -41,7 +41,7 @@ export class ContentController {
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
     @Inject(LocalStorage)
-    private readonly localStorage: ContentStorageI,
+    private readonly localStorage: LocalStorageI,
     private readonly configService: ConfigService,
   ) {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
