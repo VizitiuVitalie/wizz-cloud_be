@@ -29,20 +29,7 @@ export class ContentService implements ContentServiceInterface {
     return `http://localhost:1222/wizzcloud/files/${fileName}`;
   }
 
-  public async uploadContent(domain: ContentDomain): Promise<ContentDomain> {
-    const file: Express.Multer.File = {
-      fieldname: 'file',
-      originalname: '',
-      encoding: '7bit',
-      mimetype: domain.type,
-      size: domain.size,
-      stream: null,
-      destination: '',
-      filename: '',
-      path: '',
-      buffer: null,
-    };
-    
+  public async uploadContent(domain: ContentDomain, file: Express.Multer.File): Promise<ContentDomain> {
     const fileKey = await this.awsService.save(file);
     domain.url = await this.awsService.generatePublicUrl(fileKey);
     return this.contentRepo.save(domain);
