@@ -33,6 +33,9 @@ export class AwsService implements AwsServiceInterface {
       Key: fileKey,
       Body: file.buffer,
       ContentType: file.mimetype,
+      Metadata: {
+        size: file.size.toString(),
+      }
     });
     await this.s3Client.send(command);
     return fileKey;
