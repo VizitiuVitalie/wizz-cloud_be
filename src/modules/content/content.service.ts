@@ -80,6 +80,10 @@ export class ContentService implements ContentServiceInterface {
     }
   }
 
+  public async deleteFromBucket(fileKey: string): Promise<void> {
+    return this.awsService.delete(fileKey);
+  }
+
   public async getFileStream(fileUrl: string): Promise<Readable> {
     const fileKey = fileUrl.split('/').pop();
     return this.awsService.getFileStream(fileKey);

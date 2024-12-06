@@ -71,10 +71,12 @@ export class ContentController {
   ): Promise<ContentDto[]> {
     const user = req.user as UserDto;
 
-    console.log(typeof(user.id), typeof(userId));
-    
+    console.log(typeof user.id, typeof userId);
+
     if (user.id != userId) {
-      throw new ForbiddenException('You do not have permission to upload content for this user');
+      throw new ForbiddenException(
+        'You do not have permission to upload content for this user',
+      );
     }
 
     if (!files?.files?.length) {
@@ -98,7 +100,8 @@ export class ContentController {
         size: file.size,
         fileKey: '',
       };
-      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain =
+        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(
         domain,
         file,
@@ -112,7 +115,9 @@ export class ContentController {
 
   @UseGuards(JwtGuard)
   @Get('local/list')
-  public async getLocalUserContents(@Req() req: Request): Promise<ContentDto[]> {
+  public async getLocalUserContents(
+    @Req() req: Request,
+  ): Promise<ContentDto[]> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
     return contents.map((content: ContentDomain) =>
@@ -142,7 +147,7 @@ export class ContentController {
 
     const fileStream = await this.contentService.getFileStream(content.fileKey);
     res.setHeader('Content-Type', content.type);
-    fileStream.pipe(res);    
+    fileStream.pipe(res);
   }
 
   @UseGuards(JwtGuard)
@@ -171,7 +176,9 @@ export class ContentController {
     archive.pipe(res);
 
     for (const content of contents) {
-      const fileStream = await this.contentService.getFileStream(content.fileKey);
+      const fileStream = await this.contentService.getFileStream(
+        content.fileKey,
+      );
       archive.append(fileStream, { name: content.name });
     }
 
@@ -197,18 +204,17 @@ export class ContentController {
       );
     }
 
-    const filePath = path.resolve(content.url);
-    const fileName = path.basename(filePath);
-
     try {
-      await fs.access(filePath);
+      const fileStream = await this.contentService.getFileStream(
+        content.fileKey,
+      );
       res.set({
         'Content-Type': content.type,
-        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Disposition': `attachment; filename=${content.name}`,
       });
-      res.sendFile(filePath);
+      fileStream.pipe(res);
     } catch (err) {
-      throw new NotFoundException('File not found');
+      throw new NotFoundException('File not found in S3 bucket');
     }
   }
 
@@ -282,7 +288,14 @@ export class ContentController {
       );
     }
 
-    await this.localStorageService.delete(content.url);
+    if (content.url) {
+      await this.localStorageService.delete(content.url);
+    }
+
+    if (content.fileKey) {
+      await this.contentService.deleteFromBucket(content.fileKey);
+    }
+
     return this.contentService.deleteById(id);
   }
 }

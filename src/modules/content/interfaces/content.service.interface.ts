@@ -9,4 +9,5 @@ export interface ContentServiceInterface {
   update(domain: ContentDomain): Promise<ContentDomain>;
   deleteById(id: number): Promise<void>;
   deleteUserFiles(userId: number): Promise<void>;
+  deleteFromBucket(fileKey: string): Promise<void>;
 }
