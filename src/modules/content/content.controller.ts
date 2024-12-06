@@ -67,7 +67,16 @@ export class ContentController {
   public async uploadContent(
     @Param('userId') userId: number,
     @UploadedFiles() files: { files?: Express.Multer.File[] },
+    @Req() req: Request,
   ): Promise<ContentDto[]> {
+    const user = req.user as UserDto;
+
+    console.log(typeof(user.id), typeof(userId));
+    
+    if (user.id != userId) {
+      throw new ForbiddenException('You do not have permission to upload content for this user');
+    }
+
     if (!files?.files?.length) {
       throw new Error('No files uploaded');
     }
@@ -112,8 +121,8 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('content/:id')
-  public async getContentById(
+  @Get('bucket/:id')
+  public async getBucketContentById(
     @Param('id') id: number,
     @Req() req: Request,
     @Res() res: Response,
