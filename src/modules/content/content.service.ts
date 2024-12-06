@@ -27,10 +27,7 @@ export class ContentService implements ContentServiceInterface {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
   }
 
-  public async uploadContent(
-    domain: ContentDomain,
-    file: Express.Multer.File,
-  ): Promise<ContentDomain> {
+  public async uploadContent(domain: ContentDomain, file: Express.Multer.File): Promise<ContentDomain> {
     const fileKey = await this.awsService.save(file);
     domain.fileKey = fileKey;
     return this.contentRepo.save(domain);

@@ -87,10 +87,9 @@ export class ContentController {
         url: fileUrl,
         type: file.mimetype,
         size: file.size,
+        fileKey: '',
       };
-
-      const domain =
-        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(
         domain,
         file,
