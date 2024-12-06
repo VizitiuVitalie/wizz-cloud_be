@@ -111,7 +111,7 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('list')
+  @Get('local/list')
   public async getLocalUserContents(@Req() req: Request): Promise<ContentDto[]> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
@@ -121,7 +121,7 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('bucket/:id')
+  @Get('bucket/id/:id')
   public async getBucketContentById(
     @Param('id') id: number,
     @Req() req: Request,
@@ -146,7 +146,7 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('contents')
+  @Get('bucket/list')
   public async getBucketUserContents(
     @Req() req: Request,
     @Res() res: Response,
@@ -171,7 +171,7 @@ export class ContentController {
     archive.pipe(res);
 
     for (const content of contents) {
-      const fileStream = await this.contentService.getFileStream(content.url);
+      const fileStream = await this.contentService.getFileStream(content.fileKey);
       archive.append(fileStream, { name: content.name });
     }
 
