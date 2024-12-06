@@ -3,6 +3,7 @@ export class ContentDto {
     userId: number;
     name: string;
     type: string;
+    fileKey: string;
     url: string;
     size: number;
     createdAt: Date;
