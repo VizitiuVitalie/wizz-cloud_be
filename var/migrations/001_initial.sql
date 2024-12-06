@@ -30,7 +30,7 @@ CREATE TABLE sessions (
 
 -- +goose StatementBegin
 
-CREATE TABLE content (
+CREATE TABLE contents (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE content (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_content_user_id ON content(user_id);
+CREATE INDEX idx_contents_user_id ON contents(user_id);
 
 -- +goose StatementEnd
 
