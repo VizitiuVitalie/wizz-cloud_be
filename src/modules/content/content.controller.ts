@@ -21,8 +21,8 @@ import { ContentService } from './content.service';
 import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
-import { LocalStorage } from '../../libs/local-storage/local-storage.service';
-import { LocalStorageI } from '../../libs/local-storage/interfaces/local-storage.interface';
+import { LocalStorageService } from '../../libs/local-storage/local-storage.service';
+import { LocalStorageServiceI } from '../../libs/local-storage/interfaces/local-storage.interface';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
@@ -30,6 +30,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
 import { ContentDomain } from './domain/content.domain';
+import * as archiver from 'archiver';
 
 @Controller('content')
 export class ContentController {
@@ -40,8 +41,8 @@ export class ContentController {
     private readonly contentService: ContentServiceInterface,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
-    @Inject(LocalStorage)
-    private readonly localStorage: LocalStorageI,
+    @Inject(LocalStorageService)
+    private readonly localStorageService: LocalStorageServiceI,
     private readonly configService: ConfigService,
   ) {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
@@ -74,19 +75,26 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-      const fileUrl = await this.localStorage.save(file, this.storagePath);
+      const fileUrl = await this.localStorageService.save(
+        file,
+        this.storagePath,
+      );
 
       const contentData: CreateContentDto = {
         id: null,
-        name: file.originalname,
         userId: userId,
-        url: '',
+        name: file.originalname,
+        url: fileUrl,
         type: file.mimetype,
         size: file.size,
       };
 
-      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
-      const createdDomain = await this.contentService.uploadContent(domain, file);
+      const domain =
+        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const createdDomain = await this.contentService.uploadContent(
+        domain,
+        file,
+      );
 
       savedContents.push(this.contentAdapter.FromDomainToDto(createdDomain));
     }
@@ -96,12 +104,70 @@ export class ContentController {
 
   @UseGuards(JwtGuard)
   @Get('list')
-  public async getUserContent(@Req() req: Request): Promise<ContentDto[]> {
+  public async getLocalUserContents(@Req() req: Request): Promise<ContentDto[]> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
     return contents.map((content: ContentDomain) =>
       this.contentAdapter.FromDomainToDto(content),
     );
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('content/:id')
+  public async getContentById(
+    @Param('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const content = await this.contentService.findById(id);
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    const user = req.user as UserDto;
+
+    if (content.userId !== user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to view this content',
+      );
+    }
+
+    const fileStream = await this.contentService.getFileStream(content.fileKey);
+    res.setHeader('Content-Type', content.type);
+    fileStream.pipe(res);    
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('contents')
+  public async getBucketUserContents(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const user = req.user as UserDto;
+    const contents = await this.contentService.findByUserId(user.id);
+
+    if (!contents.length) {
+      throw new NotFoundException('No content found');
+    }
+
+    const archive = archiver('zip', {
+      zlib: { level: 9 },
+    });
+
+    res.attachment('files.zip');
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    archive.pipe(res);
+
+    for (const content of contents) {
+      const fileStream = await this.contentService.getFileStream(content.url);
+      archive.append(fileStream, { name: content.name });
+    }
+
+    await archive.finalize();
   }
 
   @UseGuards(JwtGuard)
@@ -177,7 +243,7 @@ export class ContentController {
     }
 
     const file = files.files[0];
-    const fileUrl = await this.localStorage.save(file, this.storagePath);
+    const fileUrl = await this.localStorageService.save(file, this.storagePath);
 
     content.url = fileUrl;
     content.type = file.mimetype;
@@ -208,7 +274,7 @@ export class ContentController {
       );
     }
 
-    await this.localStorage.delete(content.url);
+    await this.localStorageService.delete(content.url);
     return this.contentService.deleteById(id);
   }
 }

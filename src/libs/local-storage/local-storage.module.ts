@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { LocalStorage } from './local-storage.service';
+import { LocalStorageService } from './local-storage.service';
 
 @Module({
-  providers: [LocalStorage],
-  exports: [LocalStorage],
+  providers: [LocalStorageService],
+  exports: [LocalStorageService],
 })
 export class StorageModule {}

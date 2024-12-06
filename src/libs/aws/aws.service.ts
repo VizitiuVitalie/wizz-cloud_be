@@ -9,6 +9,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AwsServiceInterface } from './interfaces/aws-service.interface';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
+import { Readable } from 'stream';
 
 @Injectable()
 export class AwsService implements AwsServiceInterface {
@@ -26,6 +27,15 @@ export class AwsService implements AwsServiceInterface {
     this.bucketName = this.configService.get<string>('AWS_BUCKET_NAME');
   }
 
+  public async generatePublicUrl(fileKey: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileKey,
+    });
+    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    return url;
+  }
+
   public async save(file: Express.Multer.File): Promise<string> {
     const fileKey = `${uuidv4()}-${file.originalname}`;
     const command = new PutObjectCommand({
@@ -41,20 +51,20 @@ export class AwsService implements AwsServiceInterface {
     return fileKey;
   }
 
+  public async getFileStream(fileKey: string): Promise<Readable> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileKey,
+    })
+    const response = await this.s3Client.send(command);
+    return response.Body as Readable;
+  }
+
   public async delete(fileKey: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.bucketName,
       Key: fileKey,
     });
     await this.s3Client.send(command);
-  }
-
-  public async generatePublicUrl(fileKey: string): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: fileKey,
-    });
-    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
-    return url;
   }
 }
