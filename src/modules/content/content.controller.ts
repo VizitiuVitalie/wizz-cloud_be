@@ -152,7 +152,18 @@ export class ContentController {
 
   @UseGuards(JwtGuard)
   @Get('bucket/list')
-  public async getBucketUserContents(
+  public async getBucketUserContents(@Req() req: Request): Promise<ContentDto[]> {
+    const user = req.user as UserDto;
+    const contents = await this.contentService.findByUserId(user.id);
+    return contents.map((content: ContentDomain) => {
+      const dto = this.contentAdapter.FromDomainToDto(content);
+      return dto;
+    })
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('bucket/archive')
+  public async archivingBucketContents(
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
@@ -293,7 +304,7 @@ export class ContentController {
     }
 
     if (content.fileKey) {
-      await this.contentService.deleteFromBucket(content.fileKey);
+      await this.contentService.deleteOneFromBucket(content.fileKey);
     }
 
     return this.contentService.deleteById(id);

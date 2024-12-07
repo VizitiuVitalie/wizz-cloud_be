@@ -59,7 +59,7 @@ export class ContentService implements ContentServiceInterface {
     return this.contentRepo.deleteById(id);
   }
 
-  public async deleteUserFiles(userId: number): Promise<void> {
+  public async deleteLocalContents(userId: number): Promise<void> {
     const files = await this.contentRepo.getUrlsByUserId(userId);
 
     if (!files || files.length === 0) {
@@ -80,7 +80,17 @@ export class ContentService implements ContentServiceInterface {
     }
   }
 
-  public async deleteFromBucket(fileKey: string): Promise<void> {
+  public async deleteBucketContents(userId: number): Promise<void> {
+    const contents = await this.contentRepo.findByUserId(userId);
+
+    for (const content of contents) {
+      if (content.fileKey) {
+        await this.awsService.delete(content.fileKey);
+      }
+    }
+  }
+
+  public async deleteOneFromBucket(fileKey: string): Promise<void> {
     return this.awsService.delete(fileKey);
   }
 
