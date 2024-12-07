@@ -56,7 +56,8 @@ export class UserController {
       throw new ForbiddenException('You do not have permission to delete this account');
     }
 
-    await this.contentService.deleteUserFiles(id);
+    await this.contentService.deleteBucketContents(id);
+    await this.contentService.deleteLocalContents(id);
 
     await this.userService.deleteUser(id);
   }

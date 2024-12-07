@@ -8,6 +8,7 @@ export interface ContentServiceInterface {
   getFileStream(fileUrl: string): Promise<Readable>
   update(domain: ContentDomain): Promise<ContentDomain>;
   deleteById(id: number): Promise<void>;
-  deleteUserFiles(userId: number): Promise<void>;
-  deleteFromBucket(fileKey: string): Promise<void>;
+  deleteLocalContents(userId: number): Promise<void>;
+  deleteBucketContents(userId: number): Promise<void>;
+  deleteOneFromBucket(fileKey: string): Promise<void>;
 }
