@@ -4,7 +4,7 @@ import { UserDomain } from './domain/user.domain';
 import { UserRepoInterface } from './interfaces/user.repo.interface';
 import { UserEntity } from './domain/user.entity';
 import { UserRepo } from './user.repo';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService implements UserServiceInterface {
