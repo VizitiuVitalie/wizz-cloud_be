@@ -1,8 +1,6 @@
-import { AbstractEntity } from '../../../shared/entities/abstract.entity';
-
-export interface ContentRepoInterface<D, E extends AbstractEntity> {
+export interface ContentRepoInterface<D> {
   save(domain: D): Promise<D>;
-  getUrlsByUserId(userId: number): Promise<any>;
+  getUrlsByUserId(userId: number): Promise<{url: string}[]>;
   findById(id: number): Promise<D | null>;
   findByUserId(userId: number): Promise<D[]>;
   update(domain: D): Promise<D>;

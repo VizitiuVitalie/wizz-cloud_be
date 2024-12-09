@@ -3,7 +3,6 @@ import { ContentServiceInterface } from './interfaces/content.service.interface'
 import { ContentRepo } from './content.repo';
 import { ContentRepoInterface } from './interfaces/content.repo.interface';
 import { ContentDomain } from './domain/content.domain';
-import { ContentEntity } from './domain/content.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { Readable } from 'stream';
@@ -16,10 +15,7 @@ export class ContentService implements ContentServiceInterface {
   private readonly storagePath: string;
   constructor(
     @Inject(ContentRepo)
-    private readonly contentRepo: ContentRepoInterface<
-      ContentDomain,
-      ContentEntity
-    >,
+    private readonly contentRepo: ContentRepoInterface<ContentDomain>,
     private readonly configService: ConfigService,
     private readonly awsService: AwsService,
     private readonly LocalStorageService: LocalStorageService,
@@ -27,7 +23,10 @@ export class ContentService implements ContentServiceInterface {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
   }
 
-  public async uploadContent(domain: ContentDomain, file: Express.Multer.File): Promise<ContentDomain> {
+  public async uploadContent(
+    domain: ContentDomain,
+    file: Express.Multer.File,
+  ): Promise<ContentDomain> {
     const fileKey = await this.awsService.save(file);
     domain.fileKey = fileKey;
     return this.contentRepo.save(domain);

@@ -8,7 +8,7 @@ import { ContentAdapter } from './content.adapter';
 
 @Injectable()
 export class ContentRepo
-  implements ContentRepoInterface<ContentDomain, ContentEntity>
+  implements ContentRepoInterface<ContentDomain>
 {
   constructor(
     private readonly dbProvider: DbProvider,

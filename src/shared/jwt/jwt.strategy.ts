@@ -5,14 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { UserRepo } from 'src/modules/user/user.repo';
 import { UserRepoInterface } from 'src/modules/user/interfaces/user.repo.interface';
 import { UserDto } from 'src/modules/user/dto/user.dto';
-import { UserEntity } from 'src/modules/user/domain/user.entity';
 import { PayloadType } from 'src/shared/types/payload.type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         configService: ConfigService,
-        @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDto, UserEntity>,
+        @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDto>,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

@@ -1,11 +1,8 @@
 import {
-  Body,
   Controller,
   Inject,
-  Post,
   Get,
   Param,
-  Put,
   Delete,
   UseGuards,
   Req,

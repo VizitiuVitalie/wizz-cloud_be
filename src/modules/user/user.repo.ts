@@ -7,7 +7,7 @@ import { UserAdapterInterface } from './interfaces/user.adapter.interface';
 import { UserAdapter } from './user.adapter';
 
 @Injectable()
-export class UserRepo implements UserRepoInterface<UserDomain, UserEntity> {
+export class UserRepo implements UserRepoInterface<UserDomain> {
   constructor(
     private readonly dbProvider: DbProvider,
     @Inject(UserAdapter) private readonly userAdapter: UserAdapterInterface,

@@ -16,13 +16,12 @@ export class DbProvider {
     });
   }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public async query<T>(text: string, params?: any[]): Promise<T[]> {
     const client = await this.pool.connect();
     try {
       const { rows } = await client.query(text, params);
       return rows;
-    } catch (error) {
-      throw error;
     } finally {
       client.release();
     }
