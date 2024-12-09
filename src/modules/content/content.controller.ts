@@ -26,8 +26,6 @@ import { LocalStorageServiceI } from '../../libs/local-storage/interfaces/local-
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
-import { promises as fs } from 'fs';
-import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
 import { ContentDomain } from './domain/content.domain';
 import * as archiver from 'archiver';
@@ -225,6 +223,7 @@ export class ContentController {
       });
       fileStream.pipe(res);
     } catch (err) {
+      console.error('Error fetching file from S3:', err);
       throw new NotFoundException('File not found in S3 bucket');
     }
   }

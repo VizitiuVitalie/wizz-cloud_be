@@ -6,7 +6,6 @@ import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UserDomain } from "../user/domain/user.domain";
 import { SessionEntity } from "../session/domain/session.entity";
 import { UserRepoInterface } from "../user/interfaces/user.repo.interface";
-import { UserEntity } from "../user/domain/user.entity";
 import { SessionRepoInterface } from "../session/interfaces/session.repo.interface";
 import { SessionRepo } from "../session/session.repo";
 import { AuthTokens } from "../../shared/types/auth-tokens.type";
@@ -20,7 +19,7 @@ import { ConfigService } from "@nestjs/config";
 @Injectable()
 export class AuthService implements AuthServiceInterface {
     constructor(
-        @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain, UserEntity>,
+        @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain>,
         @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
         @Inject(UserService) private readonly userService: UserServiceInterface,
         private readonly jwtService: JwtService,
