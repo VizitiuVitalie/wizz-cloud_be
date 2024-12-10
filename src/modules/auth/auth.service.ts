@@ -77,7 +77,7 @@ export class AuthService implements AuthServiceInterface {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  public async register(dto: RegisterDto): Promise<void> {
+  public async register(dto: RegisterDto): Promise<{ message: string }> {
     const { email } = dto;
 
     if (!this.validateEmail(email)) {
@@ -104,6 +104,7 @@ export class AuthService implements AuthServiceInterface {
       updatedAt: new Date(),
     };
     await this.userService.create(newUser);
+    return { message: 'Please check your email for verification code' };
   }
 
   public async verifyEmail(dto: VerifyEmailDto): Promise<AuthTokens> {
@@ -133,7 +134,7 @@ export class AuthService implements AuthServiceInterface {
     }
 
     if (!user.verified) {
-      throw new UnauthorizedException('Email not verified');
+      throw new ForbiddenException('Email not verified');
     }
 
     const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(

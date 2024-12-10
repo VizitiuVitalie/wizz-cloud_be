@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { DbProvider } from '../../core/db/db.provider';
 import { UserDomain } from './domain/user.domain';
 import { UserEntity } from './domain/user.entity';
@@ -14,21 +14,28 @@ export class UserRepo implements UserRepoInterface<UserDomain> {
   ) {}
 
   public async save(domain: UserDomain): Promise<UserDomain> {
-    const [entity] = await this.dbProvider.query<UserEntity>(
-      `INSERT INTO users (full_name, email, password, verified, verification_code, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [
-        domain.fullName,
-        domain.email,
-        domain.password,
-        domain.verified,
-        domain.verificationCode,
-        domain.createdAt,
-        domain.updatedAt,
-      ],
-    );
+    try {
+      const [entity] = await this.dbProvider.query<UserEntity>(
+        `INSERT INTO users (full_name, email, password, verified, verification_code, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [
+          domain.fullName,
+          domain.email,
+          domain.password,
+          domain.verified,
+          domain.verificationCode,
+          domain.createdAt,
+          domain.updatedAt,
+        ],
+      );
 
-    return this.userAdapter.FromEntityToDomain(entity);
-  }
+      return this.userAdapter.FromEntityToDomain(entity);
+    } catch (error) {
+      if (error.code === '23505') { // PostgreSQL error code for unique violation
+        throw new BadRequestException('User with this email already exists');
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+    }
 
   public async getFullName(userId: number): Promise<string> {
     const result = await this.dbProvider.query<{ full_name: string }>(
@@ -93,7 +100,14 @@ export class UserRepo implements UserRepoInterface<UserDomain> {
            updated_at = NOW()
        WHERE id = $6
        RETURNING *;`,
-      [domain.fullName, domain.email, domain.password, domain.verified, domain.verificationCode, domain.id],
+      [
+        domain.fullName,
+        domain.email,
+        domain.password,
+        domain.verified,
+        domain.verificationCode,
+        domain.id,
+      ],
     );
 
     return this.userAdapter.FromEntityToDomain(updatedEntity);
