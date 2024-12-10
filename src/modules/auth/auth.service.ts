@@ -1,112 +1,184 @@
-import { ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { UserRepo } from "../user/user.repo";
+import { UserRepo } from '../user/user.repo';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
-import { UserDomain } from "../user/domain/user.domain";
-import { SessionEntity } from "../session/domain/session.entity";
-import { UserRepoInterface } from "../user/interfaces/user.repo.interface";
-import { SessionRepoInterface } from "../session/interfaces/session.repo.interface";
-import { SessionRepo } from "../session/session.repo";
-import { AuthTokens } from "../../shared/types/auth-tokens.type";
-import { AuthServiceInterface } from "./interfaces/auth.service.interface";
-import { PayloadType } from "../../shared/types/payload.type";
-import { createTokens } from "../../shared/utils/createTokens";
-import { UserService } from "../user/user.service";
-import { UserServiceInterface } from "../user/interfaces/user.service.interface";
-import { ConfigService } from "@nestjs/config";
+import { UserDomain } from '../user/domain/user.domain';
+import { SessionEntity } from '../session/domain/session.entity';
+import { UserRepoInterface } from '../user/interfaces/user.repo.interface';
+import { SessionRepoInterface } from '../session/interfaces/session.repo.interface';
+import { SessionRepo } from '../session/session.repo';
+import { AuthTokens } from '../../shared/types/auth-tokens.type';
+import { AuthServiceInterface } from './interfaces/auth.service.interface';
+import { PayloadType } from '../../shared/types/payload.type';
+import { createTokens } from '../../shared/utils/createTokens';
+import { UserService } from '../user/user.service';
+import { UserServiceInterface } from '../user/interfaces/user.service.interface';
+import { ConfigService } from '@nestjs/config';
+import { EmailService } from 'src/libs/email-verification/email.service';
+import { VerifyEmailDto } from 'src/libs/email-verification/verify-email.dto';
 
 @Injectable()
 export class AuthService implements AuthServiceInterface {
-    constructor(
-        @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain>,
-        @Inject(SessionRepo) private readonly sessionRepo: SessionRepoInterface<AuthTokens, SessionEntity>,
-        @Inject(UserService) private readonly userService: UserServiceInterface,
-        private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
-    ) { }
+  constructor(
+    @Inject(UserRepo) private readonly userRepo: UserRepoInterface<UserDomain>,
+    @Inject(SessionRepo)
+    private readonly sessionRepo: SessionRepoInterface<
+      AuthTokens,
+      SessionEntity
+    >,
+    @Inject(UserService) private readonly userService: UserServiceInterface,
+    private readonly emailService: EmailService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
-    private async createSession(userId: number, deviceId: string, tokens: AuthTokens): Promise<void> {
-        const session = new SessionEntity();
-        session.user_id = userId;
-        session.device_id = deviceId;
-        session.access_token = tokens.accessToken;
-        session.refresh_token = tokens.refreshToken;
-        session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        session.created_at = new Date();
-        session.updated_at = new Date();
+  private async createSession(
+    userId: number,
+    deviceId: string,
+    tokens: AuthTokens,
+  ): Promise<void> {
+    const session = new SessionEntity();
+    session.user_id = userId;
+    session.device_id = deviceId;
+    session.access_token = tokens.accessToken;
+    session.refresh_token = tokens.refreshToken;
+    session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    session.created_at = new Date();
+    session.updated_at = new Date();
 
-        await this.sessionRepo.save(session);
+    await this.sessionRepo.save(session);
+  }
+
+  private async updateSession(
+    session: SessionEntity,
+    tokens: AuthTokens,
+  ): Promise<void> {
+    session.access_token = tokens.accessToken;
+    session.refresh_token = tokens.refreshToken;
+    session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    session.updated_at = new Date();
+
+    await this.sessionRepo.updateSession(session);
+  }
+
+  private validateEmail(email: string): boolean {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  }
+
+  private generateVerificationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  public async register(dto: RegisterDto): Promise<void> {
+    const { email } = dto;
+
+    if (!this.validateEmail(email)) {
+      throw new BadRequestException('Ivalid email format');
     }
 
-    private async updateSession(session: SessionEntity, tokens: AuthTokens): Promise<void> {
-        session.access_token = tokens.accessToken;
-        session.refresh_token = tokens.refreshToken;
-        session.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        session.updated_at = new Date();
-
-        await this.sessionRepo.updateSession(session);
+    const userExists = await this.userRepo.findByEmail(email);
+    if (userExists) {
+      throw new BadRequestException('User with this email already exists');
     }
 
-    public async register(dto: RegisterDto): Promise<AuthTokens> {
+    const verificationCode = this.generateVerificationCode();
 
-        const newUser: UserDomain = {
-            id: null,
-            fullName: dto.fullName,
-            email: dto.email,
-            password: dto.password,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        const user = await this.userService.create(newUser);
+    await this.emailService.sendVerificationEmail(email, verificationCode);
 
-        const payload: PayloadType = { userId: user.id };
-        const tokens = createTokens(payload, this.jwtService, this.configService);
+    const newUser: UserDomain = {
+      id: null,
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      verified: false,
+      verificationCode,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    await this.userService.create(newUser);
+  }
 
-        await this.createSession(user.id, dto.deviceId, tokens);
+  public async verifyEmail(dto: VerifyEmailDto): Promise<AuthTokens> {
+    const { email, code } = dto;
 
-        return tokens;
+    const user = await this.userRepo.findByEmail(email);
+    if (!user || user.verificationCode !== code) {
+      throw new BadRequestException('Invalid verification code');
     }
 
-    public async login(dto: LoginDto): Promise<AuthTokens> {
-        const user = await this.userRepo.findByEmail(dto.email);
-        if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+    user.verified = true;
+    user.verificationCode = null;
+    await this.userRepo.update(user);
 
-        const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(user.id, dto.deviceId);
-        const payload: PayloadType = { userId: user.id };
-        const tokens = createTokens(payload, this.jwtService, this.configService);
+    const payload: PayloadType = { userId: user.id };
+    const tokens = createTokens(payload, this.jwtService, this.configService);
 
-        if (existingSession) {
-            await this.updateSession(existingSession, tokens);
-        } else {
-            await this.createSession(user.id, dto.deviceId, tokens);
-        }
+    await this.createSession(user.id, dto.deviceId, tokens);
 
-        return tokens;
+    return tokens;
+  }
+
+  public async login(dto: LoginDto): Promise<AuthTokens> {
+    const user = await this.userRepo.findByEmail(dto.email);
+    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    public async refreshSession(refreshToken: string): Promise<AuthTokens> {
-        const session = await this.sessionRepo.findOneByRefreshToken(refreshToken);
-        if (!session) {
-            throw new UnauthorizedException('Invalid refresh token');
-        }
-
-        const payload: PayloadType = { userId: session.user_id };
-        const tokens = createTokens(payload, this.jwtService, this.configService);
-
-        await this.sessionRepo.refreshSession(session.id, tokens.accessToken, tokens.refreshToken);
-
-        return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+    if (!user.verified) {
+      throw new UnauthorizedException('Email not verified');
     }
 
-    public async logout(accessToken: string): Promise<void> {
-        const session = await this.sessionRepo.findOneByAccessToken(accessToken);
-        if (!session) {
-            throw new ForbiddenException('Session not found');
-        }
+    const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(
+      user.id,
+      dto.deviceId,
+    );
+    const payload: PayloadType = { userId: user.id };
+    const tokens = createTokens(payload, this.jwtService, this.configService);
 
-        await this.sessionRepo.deleteByAccessToken(accessToken);
+    if (existingSession) {
+      await this.updateSession(existingSession, tokens);
+    } else {
+      await this.createSession(user.id, dto.deviceId, tokens);
     }
+
+    return tokens;
+  }
+
+  public async refreshSession(refreshToken: string): Promise<AuthTokens> {
+    const session = await this.sessionRepo.findOneByRefreshToken(refreshToken);
+    if (!session) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const payload: PayloadType = { userId: session.user_id };
+    const tokens = createTokens(payload, this.jwtService, this.configService);
+
+    await this.sessionRepo.refreshSession(
+      session.id,
+      tokens.accessToken,
+      tokens.refreshToken,
+    );
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
+  }
+
+  public async logout(accessToken: string): Promise<void> {
+    const session = await this.sessionRepo.findOneByAccessToken(accessToken);
+    if (!session) {
+      throw new ForbiddenException('Session not found');
+    }
+
+    await this.sessionRepo.deleteByAccessToken(accessToken);
+  }
 }

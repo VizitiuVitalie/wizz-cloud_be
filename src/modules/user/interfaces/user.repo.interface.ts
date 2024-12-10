@@ -4,6 +4,6 @@ export interface UserRepoInterface<D> {
   findById(id: number): Promise<D | null>;
   findByEmail(email: string): Promise<D | null>;
   findAll(): Promise<D[] | null>;
-  updateById(domain: D): Promise<D>;
+  update(domain: D): Promise<D>;
   deleteById(id: number): Promise<void>;
 }
