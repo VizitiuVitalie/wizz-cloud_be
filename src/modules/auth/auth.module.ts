@@ -8,6 +8,7 @@ import { DbModule } from 'src/core/db/db.module';
 import { SessionRepo } from '../session/session.repo';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { JwtConfigModule } from 'src/shared/jwt/jwt-config.module';
+import { EmailService } from 'src/libs/email-verification/email.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { JwtConfigModule } from 'src/shared/jwt/jwt-config.module';
     PassportModule,
     JwtConfigModule,
   ],
-  providers: [AuthService, JwtStrategy, JwtGuard, SessionRepo],
+  providers: [AuthService, EmailService, JwtStrategy, JwtGuard, SessionRepo],
   controllers: [AuthController],
   exports: [AuthService],
 })

@@ -15,6 +15,8 @@ export class UserAdapter implements UserAdapterInterface {
       fullName: dto.fullName,
       id: dto.id,
       password: null,
+      verified: dto.verified,
+      verificationCode: dto.verificationCode,
       updatedAt: undefined,
     };
   }
@@ -26,6 +28,8 @@ export class UserAdapter implements UserAdapterInterface {
       full_name: domain.fullName,
       id: domain.id,
       password: domain.password,
+      verified: domain.verified,
+      verification_code: domain.verificationCode,
       updated_at: domain.updatedAt,
     };
   }
@@ -35,6 +39,8 @@ export class UserAdapter implements UserAdapterInterface {
       id: domain.id,
       fullName: domain.fullName,
       email: domain.email,
+      verified: domain.verified,
+      verificationCode: domain.verificationCode,
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
     };
@@ -46,6 +52,8 @@ export class UserAdapter implements UserAdapterInterface {
       fullName: entity.full_name,
       email: entity.email,
       password: entity.password,
+      verified: entity.verified,
+      verificationCode: entity.verification_code,
       createdAt: entity.created_at,
       updatedAt: entity.updated_at,
     };
@@ -58,6 +66,8 @@ export class UserAdapter implements UserAdapterInterface {
       fullName: dto.fullName,
       id: 0,
       password: dto.password,
+      verified: null,
+      verificationCode: null,
       updatedAt: new Date(),
     };
   }
@@ -68,6 +78,8 @@ export class UserAdapter implements UserAdapterInterface {
       fullName: dto.fullName,
       email: dto.email,
       password: dto.password,
+      verified: null,
+      verificationCode: null,
       createdAt: undefined,
       updatedAt: new Date(),
     };

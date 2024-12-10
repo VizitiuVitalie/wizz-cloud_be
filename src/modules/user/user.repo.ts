@@ -15,11 +15,13 @@ export class UserRepo implements UserRepoInterface<UserDomain> {
 
   public async save(domain: UserDomain): Promise<UserDomain> {
     const [entity] = await this.dbProvider.query<UserEntity>(
-      `INSERT INTO users (full_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      `INSERT INTO users (full_name, email, password, verified, verification_code, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [
         domain.fullName,
         domain.email,
         domain.password,
+        domain.verified,
+        domain.verificationCode,
         domain.createdAt,
         domain.updatedAt,
       ],
@@ -80,16 +82,18 @@ export class UserRepo implements UserRepoInterface<UserDomain> {
     );
   }
 
-  public async updateById(domain: UserDomain): Promise<UserDomain> {
+  public async update(domain: UserDomain): Promise<UserDomain> {
     const [updatedEntity] = await this.dbProvider.query<UserEntity>(
       `UPDATE users
        SET full_name = $1,
            email = $2,
            password = $3,
+           verified = $4,
+            verification_code = $5,
            updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $6
        RETURNING *;`,
-      [domain.fullName, domain.email, domain.password, domain.id],
+      [domain.fullName, domain.email, domain.password, domain.verified, domain.verificationCode, domain.id],
     );
 
     return this.userAdapter.FromEntityToDomain(updatedEntity);
