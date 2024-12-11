@@ -7,7 +7,7 @@ db:
   postgres:
     user: user
     port: 5432
-    host: localhost
+    host: db # or use localhost to use without docker container
     database: your database name
     password: "your pawssword"
 
