@@ -4,7 +4,8 @@ import { AppModule } from './app.module';
 import { ConfigEnums } from './core/config/config.enums';
 import { HttpConfig } from './core/config/http.config';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-
+import * as fs from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,7 +17,15 @@ async function bootstrap() {
   };
   app.enableCors(corsOptions);
 
-  const httpConfig = app.get(ConfigService).get<HttpConfig>(ConfigEnums.HTTP);
+  const configService = app.get(ConfigService);
+  const httpConfig = configService.get<HttpConfig>(ConfigEnums.HTTP);
+
+  const cloudStoragePath = configService.get<string>('cloud_storage.path');
+  const fullPath = join(process.cwd(), cloudStoragePath);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+    console.log(`Created directory: ${fullPath}`);
+  }
 
   app.setGlobalPrefix('wizzcloud');
 

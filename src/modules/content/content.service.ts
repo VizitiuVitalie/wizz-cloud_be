@@ -37,6 +37,10 @@ export class ContentService implements ContentServiceInterface {
     return result;
   }
 
+  public async findByFileKey(fileKey: string): Promise<ContentDomain | null> {
+    return this.contentRepo.findByFileKey(fileKey);
+  }
+
   public async findByUserId(userId: number): Promise<ContentDomain[]> {
     const contents = await this.contentRepo.findByUserId(userId);
 
