@@ -112,8 +112,8 @@ export class ContentController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('local/list')
-  public async getLocalUserContents(
+  @Get('metadata/list')
+  public async getContentsMetadata(
     @Req() req: Request,
   ): Promise<ContentDto[]> {
     const user = req.user as UserDto;
@@ -150,13 +150,49 @@ export class ContentController {
 
   @UseGuards(JwtGuard)
   @Get('bucket/list')
-  public async getBucketUserContents(@Req() req: Request): Promise<ContentDto[]> {
+  public async getBucketUserContents(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
-    return contents.map((content: ContentDomain) => {
-      const dto = this.contentAdapter.FromDomainToDto(content);
-      return dto;
-    })
+
+    if (!contents.length) {
+      throw new NotFoundException('No content found');
+    }
+
+    const files = contents.map((content) => ({
+      fileKey: content.fileKey,
+      contentType: content.type,
+      name: content.name,
+    }));
+
+    res.json(files);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('bucket/file/:fileKey')
+  public async getFileFromBucket(
+    @Param('fileKey') fileKey: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const user = req.user as UserDto;
+    const content = await this.contentService.findByFileKey(fileKey);
+
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    if (content.userId !== user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to view this content',
+      );
+    }
+
+    const fileStream = await this.contentService.getFileStream(fileKey);
+    res.setHeader('Content-Type', content.type);
+    fileStream.pipe(res);
   }
 
   @UseGuards(JwtGuard)

@@ -58,6 +58,19 @@ export class ContentRepo
     return this.contentAdapter.FromEntityToDomain(entity);
   }
 
+  public async findByFileKey(fileKey: string): Promise<ContentDomain | null> {
+    const [entity] = await this.dbProvider.query<ContentEntity>(
+      `SELECT * FROM contents WHERE file_key = $1 LIMIT 1`,
+      [fileKey],
+    );
+
+    if (!entity) {
+      return undefined;
+    }
+
+    return this.contentAdapter.FromEntityToDomain(entity);
+  }
+
   public async findByUserId(userId: number): Promise<ContentDomain[]> {
     const entities = await this.dbProvider.query<ContentEntity>(
       `SELECT * FROM contents WHERE user_id = $1`,
