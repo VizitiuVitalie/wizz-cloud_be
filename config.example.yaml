@@ -17,3 +17,9 @@ jwt:
 
 cloud_storage:
   path: "/your/path/to/storage/"
+
+aws:
+  region: e111
+  access_key_id: 111
+  secret_access_key: 111
+  bucket_name: 111

@@ -12,11 +12,10 @@ export interface ConfigType {
       };
     };
     jwt: {
-      ACCESS_SECRET_KEY: string;
-      REFRESH_SECRET_KEY: string;
+      access_secret_key: string;
+      refresh_secret_key: string;
     };
     cloud_storage: {
       path: string;
     };
   }
-  

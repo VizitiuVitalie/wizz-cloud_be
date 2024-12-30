@@ -1,3 +1,4 @@
+import { RegisterDto } from '../auth/dto/auth.dto';
 import { UserDomain } from './domain/user.domain';
 import { UserEntity } from './domain/user.entity';
 import { UserDto } from './dto/user.dto';
@@ -81,6 +82,19 @@ export class UserAdapter implements UserAdapterInterface {
       verified: null,
       verificationCode: null,
       createdAt: undefined,
+      updatedAt: new Date(),
+    };
+  }
+
+  public FromRegisterDtoToDomain(dto: RegisterDto, verificationCode: string): UserDomain {
+    return {
+      id: null,
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      verified: false,
+      verificationCode,
+      createdAt: new Date(),
       updatedAt: new Date(),
     };
   }
