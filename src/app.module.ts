@@ -3,14 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { Config } from './core/config/config';
 import { UserModule } from './modules/user/user.module';
 import { ContentModule } from './modules/content/content.module';
-import { StorageModule } from './libs/local-storage/local-storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SessionModule } from './modules/session/session.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { AwsModule } from './libs/aws/aws.module';
-
-
 
 @Module({
   imports: [
@@ -26,8 +22,6 @@ import { AwsModule } from './libs/aws/aws.module';
     AuthModule,
     SessionModule,
     ContentModule,
-    StorageModule,
-    AwsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { UserAdapterInterface } from '../user/interfaces/user.adapter.interface';
+import { UserAdapter } from '../user/user.adapter';
 import { UserRepo } from '../user/user.repo';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UserDomain } from '../user/domain/user.domain';
@@ -17,7 +19,6 @@ import { SessionRepo } from '../session/session.repo';
 import { AuthTokens } from '../../shared/types/auth-tokens.type';
 import { AuthServiceInterface } from './interfaces/auth.service.interface';
 import { PayloadType } from '../../shared/types/payload.type';
-import { createTokens } from '../../shared/utils/createTokens';
 import { UserService } from '../user/user.service';
 import { UserServiceInterface } from '../user/interfaces/user.service.interface';
 import { ConfigService } from '@nestjs/config';
@@ -34,6 +35,7 @@ export class AuthService implements AuthServiceInterface {
       SessionEntity
     >,
     @Inject(UserService) private readonly userService: UserServiceInterface,
+    @Inject(UserAdapter) private readonly userAdapter: UserAdapterInterface,
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -77,41 +79,44 @@ export class AuthService implements AuthServiceInterface {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  public async register(dto: RegisterDto): Promise<{ message: string }> {
-    const { email } = dto;
+  private createTokens(payload: PayloadType): AuthTokens {
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('jwt.ACCESS_SECRET_KEY'),
+      expiresIn: '2h',
+    });
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('jwt.REFRESH_SECRET_KEY'),
+      expiresIn: '7d',
+    });
+    return { accessToken, refreshToken };
+  }
 
-    if (!this.validateEmail(email)) {
+  public async register(dto: RegisterDto): Promise<{ message: string }> {
+    if (!this.validateEmail(dto.email)) {
       throw new BadRequestException('Ivalid email format');
     }
 
-    const userExists = await this.userRepo.findByEmail(email);
-    if (userExists) {
-      throw new BadRequestException('User with this email already exists');
+    const exist = await this.userRepo.findByEmail(dto.email);
+    if (exist) {
+      throw new Error('cannot find by email');
     }
 
     const verificationCode = this.generateVerificationCode();
+    await this.emailService.sendVerificationEmail(dto.email, verificationCode);
 
-    await this.emailService.sendVerificationEmail(email, verificationCode);
+    const user = this.userAdapter.FromRegisterDtoToDomain(dto, verificationCode)
+    await this.userService.create(user);
 
-    const newUser: UserDomain = {
-      id: null,
-      fullName: dto.fullName,
-      email: dto.email,
-      password: dto.password,
-      verified: false,
-      verificationCode,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    await this.userService.create(newUser);
     return { message: 'Please check your email for verification code' };
   }
 
-  public async verifyEmail(dto: VerifyEmailDto): Promise<AuthTokens> {
-    const { email, code } = dto;
-
+  public async verifyEmail({
+    email,
+    code,
+    deviceId,
+  }: VerifyEmailDto): Promise<AuthTokens> {
     const user = await this.userRepo.findByEmail(email);
-    if (!user || user.verificationCode !== code) {
+    if (user?.verificationCode !== code) {
       throw new BadRequestException('Invalid verification code');
     }
 
@@ -119,10 +124,8 @@ export class AuthService implements AuthServiceInterface {
     user.verificationCode = null;
     await this.userRepo.update(user);
 
-    const payload: PayloadType = { userId: user.id };
-    const tokens = createTokens(payload, this.jwtService, this.configService);
-
-    await this.createSession(user.id, dto.deviceId, tokens);
+    const tokens = this.createTokens({ userId: user.id });
+    await this.createSession(user.id, deviceId, tokens);
 
     return tokens;
   }
@@ -137,15 +140,15 @@ export class AuthService implements AuthServiceInterface {
       throw new ForbiddenException('Email not verified');
     }
 
-    const existingSession = await this.sessionRepo.findOneByUserIdAndDeviceId(
+    const exist = await this.sessionRepo.findOneByUserIdAndDeviceId(
       user.id,
       dto.deviceId,
     );
     const payload: PayloadType = { userId: user.id };
-    const tokens = createTokens(payload, this.jwtService, this.configService);
+    const tokens = this.createTokens(payload);
 
-    if (existingSession) {
-      await this.updateSession(existingSession, tokens);
+    if (exist) {
+      await this.updateSession(exist, tokens);
     } else {
       await this.createSession(user.id, dto.deviceId, tokens);
     }
@@ -160,7 +163,7 @@ export class AuthService implements AuthServiceInterface {
     }
 
     const payload: PayloadType = { userId: session.user_id };
-    const tokens = createTokens(payload, this.jwtService, this.configService);
+    const tokens = this.createTokens(payload);
 
     await this.sessionRepo.refreshSession(
       session.id,

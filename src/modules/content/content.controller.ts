@@ -15,35 +15,30 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { StorageInterface } from '../../libs/storage/interfaces/storage.interface';
 import { ContentServiceInterface } from './interfaces/content.service.interface';
 import { ContentAdapterInterface } from './interfaces/content.adapter.interface';
 import { ContentService } from './content.service';
 import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
-import { LocalStorageService } from '../../libs/local-storage/local-storage.service';
-import { LocalStorageServiceI } from '../../libs/local-storage/interfaces/local-storage.interface';
+import { LocalStorageService } from '../../libs/storage/local/local-storage.service';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
-import { ConfigService } from '@nestjs/config';
 import { ContentDomain } from './domain/content.domain';
 import * as archiver from 'archiver';
 
 @Controller('content')
 export class ContentController {
-  private readonly storagePath: string;
-
   constructor(
     @Inject(ContentService)
     private readonly contentService: ContentServiceInterface,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
     @Inject(LocalStorageService)
-    private readonly localStorageService: LocalStorageServiceI,
-    private readonly configService: ConfigService,
+    private readonly storage: StorageInterface,
   ) {
-    this.storagePath = this.configService.get<string>('cloud_storage.path');
   }
 
   @UseGuards(JwtGuard)
@@ -84,9 +79,8 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-      const fileUrl = await this.localStorageService.save(
+      const fileUrl = await this.storage.save(
         file,
-        this.storagePath,
       );
 
       const contentData: CreateContentDto = {
@@ -273,7 +267,7 @@ export class ContentController {
         if (
           ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)
         ) {
-          callback(null, true);
+          callback(new Error("invalid mimetype provided"), true);
         } else {
           callback(null, false);
         }
@@ -303,7 +297,7 @@ export class ContentController {
     }
 
     const file = files.files[0];
-    const fileUrl = await this.localStorageService.save(file, this.storagePath);
+    const fileUrl = await this.storage.save(file);
 
     content.url = fileUrl;
     content.type = file.mimetype;
@@ -335,7 +329,7 @@ export class ContentController {
     }
 
     if (content.url) {
-      await this.localStorageService.delete(content.url);
+      await this.storage.delete(content.url);
     }
 
     if (content.fileKey) {

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { StorageInterface } from '../../libs/storage/interfaces/storage.interface';
 import { ContentServiceInterface } from './interfaces/content.service.interface';
 import { ContentRepo } from './content.repo';
 import { ContentRepoInterface } from './interfaces/content.repo.interface';
@@ -7,18 +8,17 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
-import { AwsService } from 'src/libs/aws/aws.service';
-import { LocalStorageService } from 'src/libs/local-storage/local-storage.service';
+import { AwsService } from 'src/libs/storage/aws/aws.service';
 
 @Injectable()
 export class ContentService implements ContentServiceInterface {
   private readonly storagePath: string;
+
   constructor(
     @Inject(ContentRepo)
     private readonly contentRepo: ContentRepoInterface<ContentDomain>,
+    @Inject(AwsService) private readonly storage: StorageInterface,
     private readonly configService: ConfigService,
-    private readonly awsService: AwsService,
-    private readonly LocalStorageService: LocalStorageService,
   ) {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
   }
@@ -27,7 +27,7 @@ export class ContentService implements ContentServiceInterface {
     domain: ContentDomain,
     file: Express.Multer.File,
   ): Promise<ContentDomain> {
-    const fileKey = await this.awsService.save(file);
+    const fileKey = await this.storage.save(file);
     domain.fileKey = fileKey;
     return this.contentRepo.save(domain);
   }
@@ -42,16 +42,17 @@ export class ContentService implements ContentServiceInterface {
   }
 
   public async findByUserId(userId: number): Promise<ContentDomain[]> {
-    const contents = await this.contentRepo.findByUserId(userId);
-
-    return Promise.all(
-      contents.map(async (content: ContentDomain) => {
-        content.url = await this.LocalStorageService.generatePublicUrl(
-          content.url,
-        );
-        return content;
-      }),
-    );
+    // @TODO --> check
+    // const contents = await this.contentRepo.findByUserId(userId);
+    //
+    // return Promise.all(
+    //   contents.map(async (content: ContentDomain) => {
+    //     content.url = await this.localStorageService.generatePublicUrl(
+    //       content.url,
+    //     );
+    //     return content;
+    //   }),
+    // );
   }
 
   public async update(domain: ContentDomain): Promise<ContentDomain> {
@@ -88,17 +89,17 @@ export class ContentService implements ContentServiceInterface {
 
     for (const content of contents) {
       if (content.fileKey) {
-        await this.awsService.delete(content.fileKey);
+        await this.storage.delete(content.fileKey);
       }
     }
   }
 
   public async deleteOneFromBucket(fileKey: string): Promise<void> {
-    return this.awsService.delete(fileKey);
+    return this.storage.delete(fileKey);
   }
 
   public async getFileStream(fileUrl: string): Promise<Readable> {
     const fileKey = fileUrl.split('/').pop();
-    return this.awsService.getFileStream(fileKey);
+    return this.storage.getFileStream(fileKey);
   }
 }
