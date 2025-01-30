@@ -168,8 +168,6 @@ export class ContentController {
       );
     }
 
-    console.log('hui', content.type);
-    
     try {
       const fileStream = await this.contentService.getFileStream(
         content.fileKey,

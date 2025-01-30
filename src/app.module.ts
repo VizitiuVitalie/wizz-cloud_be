@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Config } from './core/config/config';
 import { UserModule } from './modules/user/user.module';
@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SessionModule } from './modules/session/session.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ContentService } from './modules/content/content.service';
 
 @Module({
   imports: [
@@ -24,4 +25,10 @@ import { join } from 'path';
     ContentModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly contentService: ContentService) {}
+
+  async onModuleInit() {
+    await this.contentService.updateAllPresignedUrls();
+  }
+}
