@@ -5,6 +5,7 @@ export class ContentEntity extends AbstractEntity {
   public name: string;
   public type: string;
   public file_key: string;
-  public url: string;
+  public presigned_url: string;
+  public content_path: string;
   public size: number;
 }

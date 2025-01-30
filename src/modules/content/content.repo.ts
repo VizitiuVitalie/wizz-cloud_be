@@ -18,13 +18,14 @@ export class ContentRepo
 
   public async save(domain: ContentDomain): Promise<ContentDomain> {
     const [entity] = await this.dbProvider.query<ContentEntity>(
-      `INSERT INTO contents (user_id, name, type, file_key, url, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      `INSERT INTO contents (user_id, name, type, file_key, presigned_url, content_path, size, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
       [
         domain.userId,
         domain.name,
         domain.type,
         domain.fileKey,
-        domain.url,
+        domain.presignedUrl,
+        domain.contentPath,
         domain.size,
         domain.createdAt,
         domain.updatedAt,
@@ -36,11 +37,21 @@ export class ContentRepo
 
   public async getUrlsByUserId(userId: number): Promise<{ url: string }[]> {
     const entities = await this.dbProvider.query<{ url: string }>(
-      `SELECT url FROM contents WHERE user_id = $1`,
+      `SELECT presigned_url FROM contents WHERE user_id = $1`,
       [userId],
     );
 
     return entities;
+  }
+
+  public async findAll(): Promise<ContentDomain[]> {
+    const entities = await this.dbProvider.query<ContentEntity>(
+      `SELECT * FROM contents`,
+    );
+
+    return entities.map((entity) =>
+      this.contentAdapter.FromEntityToDomain(entity),
+    );
   }
 
   public async findById(id: number): Promise<ContentDomain | null> {
@@ -50,19 +61,6 @@ export class ContentRepo
     );
 
     console.log('repo: ', entity);
-
-    if (!entity) {
-      return undefined;
-    }
-
-    return this.contentAdapter.FromEntityToDomain(entity);
-  }
-
-  public async findByFileKey(fileKey: string): Promise<ContentDomain | null> {
-    const [entity] = await this.dbProvider.query<ContentEntity>(
-      `SELECT * FROM contents WHERE file_key = $1 LIMIT 1`,
-      [fileKey],
-    );
 
     if (!entity) {
       return undefined;
@@ -82,13 +80,12 @@ export class ContentRepo
     );
   }
 
-  public async update(domain: ContentDomain): Promise<ContentDomain> {
-    const [entity] = await this.dbProvider.query<ContentEntity>(
-      `UPDATE contents SET type = $1, url = $2, size = $3, updated_at = $4 WHERE id = $5 RETURNING *`,
-      [domain.type, domain.url, domain.size, domain.updatedAt, domain.id],
+  public async updatePresignedUrl(id: number, presignedUrl: string): Promise<void> {
+    const updatedAt = new Date();
+    await this.dbProvider.query(
+      `UPDATE contents SET presigned_url = $1, updated_at = $2 WHERE id = $3`,
+      [presignedUrl, updatedAt, id],
     );
-
-    return this.contentAdapter.FromEntityToDomain(entity);
   }
 
   public async deleteById(id: number): Promise<void> {

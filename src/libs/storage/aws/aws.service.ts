@@ -27,16 +27,18 @@ export class AwsService implements StorageInterface {
     this.bucketName = this.configService.get<string>('aws.bucket_name');
   }
 
-  public async generatePublicUrl(fileKey: string): Promise<string> {
+  public async generateLinks(fileKey: string): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: fileKey,
     });
-    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
-    return url;
+    const presignedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 900 });
+    console.log('presignedUrl in aws.service: ', presignedUrl);
+    
+    return presignedUrl;
   }
 
-  public async save(file: Express.Multer.File): Promise<string> {
+  public async save(file: Express.Multer.File): Promise<{ fileKey: string, presignedUrl: string}> {
     const fileKey = `${uuidv4()}-${file.originalname}`;
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
@@ -48,7 +50,8 @@ export class AwsService implements StorageInterface {
       }
     });
     await this.s3Client.send(command);
-    return fileKey;
+    const presignedUrl = await this.generateLinks(fileKey);
+    return { fileKey, presignedUrl };
   }
 
   public async getFileStream(fileKey: string): Promise<Readable> {

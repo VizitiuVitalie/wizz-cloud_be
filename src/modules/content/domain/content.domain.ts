@@ -4,7 +4,8 @@ export class ContentDomain {
   public name: string;
   public type: string;
   public fileKey: string;
-  public url: string;
+  public presignedUrl: string;
+  public contentPath: string;
   public size: number;
   public createdAt: Date;
   public updatedAt: Date;

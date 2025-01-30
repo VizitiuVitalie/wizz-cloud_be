@@ -10,6 +10,6 @@ import { ContentModule } from '../content/content.module';
   imports: [DbModule, ContentModule],
   controllers: [UserController],
   providers: [UserRepo, UserService, UserAdapter],
-  exports: [UserService, UserRepo],
+  exports: [UserService, UserRepo, UserAdapter],
 })
 export class UserModule {}

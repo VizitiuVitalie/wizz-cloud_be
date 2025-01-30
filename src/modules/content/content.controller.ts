@@ -22,12 +22,10 @@ import { ContentService } from './content.service';
 import { ContentAdapter } from './content.adapter';
 import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDto } from './dto/content.dto';
-import { LocalStorageService } from '../../libs/storage/local/local-storage.service';
 import { JwtGuard } from '../../shared/jwt/jwt.guard';
 import { Request, Response } from 'express';
 import { UserDto } from '../user/dto/user.dto';
-import { ContentDomain } from './domain/content.domain';
-import * as archiver from 'archiver';
+import { AwsService } from 'src/libs/storage/aws/aws.service';
 
 @Controller('content')
 export class ContentController {
@@ -36,10 +34,8 @@ export class ContentController {
     private readonly contentService: ContentServiceInterface,
     @Inject(ContentAdapter)
     private readonly contentAdapter: ContentAdapterInterface,
-    @Inject(LocalStorageService)
-    private readonly storage: StorageInterface,
-  ) {
-  }
+    @Inject(AwsService) private readonly storage: StorageInterface,
+  ) {}
 
   @UseGuards(JwtGuard)
   @Post('/:userId')
@@ -64,7 +60,7 @@ export class ContentController {
   ): Promise<ContentDto[]> {
     const user = req.user as UserDto;
 
-    console.log(typeof user.id, typeof userId);
+    console.log('controller: ', typeof user.id, typeof userId);
 
     if (user.id != userId) {
       throw new ForbiddenException(
@@ -79,21 +75,15 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-      const fileUrl = await this.storage.save(
-        file,
-      );
 
       const contentData: CreateContentDto = {
         id: null,
         userId: userId,
         name: file.originalname,
-        url: fileUrl,
         type: file.mimetype,
         size: file.size,
-        fileKey: '',
       };
-      const domain =
-        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(
         domain,
         file,
@@ -103,18 +93,6 @@ export class ContentController {
     }
 
     return savedContents;
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('metadata/list')
-  public async getContentsMetadata(
-    @Req() req: Request,
-  ): Promise<ContentDto[]> {
-    const user = req.user as UserDto;
-    const contents = await this.contentService.findByUserId(user.id);
-    return contents.map((content: ContentDomain) =>
-      this.contentAdapter.FromDomainToDto(content),
-    );
   }
 
   @UseGuards(JwtGuard)
@@ -147,81 +125,28 @@ export class ContentController {
   public async getBucketUserContents(
     @Req() req: Request,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<any> {
     const user = req.user as UserDto;
     const contents = await this.contentService.findByUserId(user.id);
 
     if (!contents.length) {
-      throw new NotFoundException('No content found');
+      return res.json([]);
     }
 
     const files = contents.map((content) => ({
-      fileKey: content.fileKey,
-      contentType: content.type,
+      id: content.id,
+      userId: content.userId,
       name: content.name,
+      type: content.type,
+      fileKey: content.fileKey,
+      presignedUrl: content.presignedUrl,
+      contentPath: content.contentPath,
+      size: content.size,
+      createdAt: content.createdAt,
+      updatedAt: content.updatedAt,
     }));
 
     res.json(files);
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('bucket/file/:fileKey')
-  public async getFileFromBucket(
-    @Param('fileKey') fileKey: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
-    const user = req.user as UserDto;
-    const content = await this.contentService.findByFileKey(fileKey);
-
-    if (!content) {
-      throw new NotFoundException('Content not found');
-    }
-
-    if (content.userId !== user.id) {
-      throw new ForbiddenException(
-        'You do not have permission to view this content',
-      );
-    }
-
-    const fileStream = await this.contentService.getFileStream(fileKey);
-    res.setHeader('Content-Type', content.type);
-    fileStream.pipe(res);
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('bucket/archive')
-  public async archivingBucketContents(
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
-    const user = req.user as UserDto;
-    const contents = await this.contentService.findByUserId(user.id);
-
-    if (!contents.length) {
-      throw new NotFoundException('No content found');
-    }
-
-    const archive = archiver('zip', {
-      zlib: { level: 9 },
-    });
-
-    res.attachment('files.zip');
-
-    archive.on('error', (err) => {
-      throw err;
-    });
-
-    archive.pipe(res);
-
-    for (const content of contents) {
-      const fileStream = await this.contentService.getFileStream(
-        content.fileKey,
-      );
-      archive.append(fileStream, { name: content.name });
-    }
-
-    await archive.finalize();
   }
 
   @UseGuards(JwtGuard)
@@ -243,6 +168,8 @@ export class ContentController {
       );
     }
 
+    console.log('hui', content.type);
+    
     try {
       const fileStream = await this.contentService.getFileStream(
         content.fileKey,
@@ -256,57 +183,6 @@ export class ContentController {
       console.error('Error fetching file from S3:', err);
       throw new NotFoundException('File not found in S3 bucket');
     }
-  }
-
-  @UseGuards(JwtGuard)
-  @Put('update/:id')
-  @UseInterceptors(
-    FileFieldsInterceptor([{ name: 'files', maxCount: 1 }], {
-      limits: { fileSize: 10 * 1024 * 1024 },
-      fileFilter: (req, file, callback) => {
-        if (
-          ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)
-        ) {
-          callback(new Error("invalid mimetype provided"), true);
-        } else {
-          callback(null, false);
-        }
-      },
-    }),
-  )
-  public async updateContent(
-    @Param('id') id: number,
-    @UploadedFiles() files: { files?: Express.Multer.File[] },
-    @Req() req: Request,
-  ): Promise<ContentDto> {
-    if (!files?.files?.length) {
-      throw new Error('No files uploaded');
-    }
-
-    const content = await this.contentService.findById(id);
-    if (!content) {
-      throw new NotFoundException('Content not found');
-    }
-
-    const user = req.user as UserDto;
-
-    if (content.userId !== user.id) {
-      throw new ForbiddenException(
-        'You do not have permission to update this content',
-      );
-    }
-
-    const file = files.files[0];
-    const fileUrl = await this.storage.save(file);
-
-    content.url = fileUrl;
-    content.type = file.mimetype;
-    content.size = file.size;
-    content.updatedAt = new Date();
-
-    const updatedDomain = await this.contentService.update(content);
-
-    return this.contentAdapter.FromDomainToDto(updatedDomain);
   }
 
   @UseGuards(JwtGuard)
@@ -328,12 +204,8 @@ export class ContentController {
       );
     }
 
-    if (content.url) {
-      await this.storage.delete(content.url);
-    }
-
     if (content.fileKey) {
-      await this.contentService.deleteOneFromBucket(content.fileKey);
+      await this.storage.delete(content.fileKey);
     }
 
     return this.contentService.deleteById(id);
