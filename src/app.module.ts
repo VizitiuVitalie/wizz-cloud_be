@@ -30,5 +30,6 @@ export class AppModule implements OnModuleInit {
 
   async onModuleInit() {
     await this.contentService.updateAllPresignedUrls();
+    console.log('Presigned URLs have been initially updated');
   }
 }

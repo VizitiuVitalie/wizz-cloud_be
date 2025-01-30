@@ -47,6 +47,10 @@ export class ContentService implements ContentServiceInterface {
 
   public async findByUserId(userId: number): Promise<ContentDomain[]> {
     const contents = await this.contentRepo.findByUserId(userId);
+    for (const content of contents) {
+      const newPresignedUrl = await this.storage.generateLinks(content.fileKey);
+      content.presignedUrl = newPresignedUrl;
+    }
     return contents;
   }
 
