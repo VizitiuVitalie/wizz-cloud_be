@@ -4,11 +4,11 @@ import { ContentServiceInterface } from './interfaces/content.service.interface'
 import { ContentRepo } from './content.repo';
 import { ContentRepoInterface } from './interfaces/content.repo.interface';
 import { ContentDomain } from './domain/content.domain';
-import * as path from 'path';
-import * as fs from 'fs/promises';
 import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
 import { AwsService } from 'src/libs/storage/aws/aws.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class ContentService implements ContentServiceInterface {
@@ -19,16 +19,24 @@ export class ContentService implements ContentServiceInterface {
     private readonly contentRepo: ContentRepoInterface<ContentDomain>,
     @Inject(AwsService) private readonly storage: StorageInterface,
     private readonly configService: ConfigService,
+    @InjectQueue('presignedUrlQueue') private readonly presignedUrlQueue: Queue,
   ) {
     this.storagePath = this.configService.get<string>('cloud_storage.path');
+    this.schedulePresignedUrlUpdates();
   }
 
-  public async uploadContent(
-    domain: ContentDomain,
-    file: Express.Multer.File,
-  ): Promise<ContentDomain> {
-    const fileKey = await this.storage.save(file);
-    domain.fileKey = fileKey;
+  private async schedulePresignedUrlUpdates() {
+    console.log('Scheduling presigned URL updates');
+    const repeatableJobs = await this.presignedUrlQueue.getRepeatableJobs();
+    if (repeatableJobs.length === 0) {
+      await this.presignedUrlQueue.add('updatePresignedUrls', {}, { repeat: { cron: '*/10 * * * *' } }); // Every 10 minutes
+    }
+  }
+
+  public async uploadContent(domain: ContentDomain, file: Express.Multer.File): Promise<ContentDomain> {
+    const fileLinks = await this.storage.save(file);
+    domain.fileKey = fileLinks.fileKey;
+    domain.presignedUrl = fileLinks.presignedUrl;
     return this.contentRepo.save(domain);
   }
 
@@ -37,54 +45,27 @@ export class ContentService implements ContentServiceInterface {
     return result;
   }
 
-  public async findByFileKey(fileKey: string): Promise<ContentDomain | null> {
-    return this.contentRepo.findByFileKey(fileKey);
-  }
-
   public async findByUserId(userId: number): Promise<ContentDomain[]> {
-    // @TODO --> check
-    // const contents = await this.contentRepo.findByUserId(userId);
-    //
-    // return Promise.all(
-    //   contents.map(async (content: ContentDomain) => {
-    //     content.url = await this.localStorageService.generatePublicUrl(
-    //       content.url,
-    //     );
-    //     return content;
-    //   }),
-    // );
+    const contents = await this.contentRepo.findByUserId(userId);
+    return contents;
   }
 
-  public async update(domain: ContentDomain): Promise<ContentDomain> {
-    return this.contentRepo.update(domain);
+  public async updateAllPresignedUrls(): Promise<void> {
+    const contents = await this.contentRepo.findAll();
+    console.log('contents in updateAllPresignedUrls: ', contents);
+    
+    for (const content of contents) {
+      const newPresignedUrl = await this.storage.generateLinks(content.fileKey);
+      await this.contentRepo.updatePresignedUrl(content.id, newPresignedUrl);
+      console.log(`Updated presignedUrl for content ID ${content.id}`);
+    }
   }
 
   public async deleteById(id: number): Promise<void> {
     return this.contentRepo.deleteById(id);
   }
 
-  public async deleteLocalContents(userId: number): Promise<void> {
-    const files = await this.contentRepo.getUrlsByUserId(userId);
-
-    if (!files || files.length === 0) {
-      console.log(`No files found for user ${userId}`);
-      return;
-    }
-
-    console.log(`Cloud storage path: ${this.storagePath}`);
-
-    for (const file of files) {
-      const filePath = path.resolve(this.storagePath, path.basename(file.url));
-      try {
-        await fs.unlink(filePath);
-        console.log(`Deleted file: ${filePath}`);
-      } catch (err) {
-        console.error(`Error deleting file: ${filePath}`, err);
-      }
-    }
-  }
-
-  public async deleteBucketContents(userId: number): Promise<void> {
+  public async deleteContents(userId: number): Promise<void> {
     const contents = await this.contentRepo.findByUserId(userId);
 
     for (const content of contents) {
@@ -94,12 +75,7 @@ export class ContentService implements ContentServiceInterface {
     }
   }
 
-  public async deleteOneFromBucket(fileKey: string): Promise<void> {
-    return this.storage.delete(fileKey);
-  }
-
-  public async getFileStream(fileUrl: string): Promise<Readable> {
-    const fileKey = fileUrl.split('/').pop();
+  public async getFileStream(fileKey: string): Promise<Readable> {
     return this.storage.getFileStream(fileKey);
   }
 }

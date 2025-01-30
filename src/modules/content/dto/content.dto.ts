@@ -4,7 +4,8 @@ export class ContentDto {
     name: string;
     type: string;
     fileKey: string;
-    url: string;
+    presignedUrl: string;
+    contentPath: string;
     size: number;
     createdAt: Date;
     updatedAt: Date;

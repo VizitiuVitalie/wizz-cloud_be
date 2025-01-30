@@ -18,18 +18,17 @@ export class LocalStorageService implements StorageInterface {
     throw new Error('Method not implemented.');
   }
 
-  public async generatePublicUrl(filePath: string): Promise<string> {
-    const fileName = path.basename(filePath);
-    return `http://localhost:1222/wizzcloud/files/${fileName}`;
+  public async generateLinks(filePath: string): Promise<string> {
+    const contentPath = path.basename(filePath);
+    return contentPath;
   }
 
-  public async save(file: Express.Multer.File): Promise<string> {
-    const filePath = path.join(
-      this.destination,
-      `${file.originalname}-${uuidv4()}`,
-    );
+  public async save(file: Express.Multer.File): Promise<{ fileKey: string, presignedUrl: string }> { //TODO: разобраться с тем что метод не подходит под оба сторейджа(а именно под локальный проблема с path)
+    const fileKey = `${file.originalname}-${uuidv4()}`;
+    const filePath = path.join(this.destination, fileKey);
     await fs.writeFile(filePath, file.buffer);
-    return filePath;
+    const presignedUrl = await this.generateLinks(filePath);
+    return { fileKey, presignedUrl };
   }
 
   public async delete(filePath: string): Promise<void> {

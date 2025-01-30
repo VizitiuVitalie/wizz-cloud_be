@@ -81,11 +81,11 @@ export class AuthService implements AuthServiceInterface {
 
   private createTokens(payload: PayloadType): AuthTokens {
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('jwt.ACCESS_SECRET_KEY'),
+      secret: this.configService.get<string>('jwt.access_secret_key'),
       expiresIn: '2h',
     });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('jwt.REFRESH_SECRET_KEY'),
+      secret: this.configService.get<string>('jwt.refresh_secret_key'),
       expiresIn: '7d',
     });
     return { accessToken, refreshToken };

@@ -1,13 +1,13 @@
 #before using, remove ".example" in this file's naming.
 
 http:
-  port: port number
+  port: 1222
 
 db:
   postgres:
     user: user
     port: 5432
-    host: localhost # or use localhost to use without docker container
+    host: db # or use localhost to use without docker container
     database: your database name
     password: "your passsword"
 
@@ -19,7 +19,7 @@ cloud_storage:
   path: "/your/path/to/storage/"
 
 aws:
-  region: e111
+  region: 111
   access_key_id: 111
   secret_access_key: 111
   bucket_name: 111
