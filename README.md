@@ -1,126 +1,199 @@
-# GIG
+# WizzCloud Project Documentation
 
-### Admin Panel
+## Overview
 
-#### Service Management
+WizzCloud is a cloud-based file storage system designed with a layered architecture following best practices for separation of concerns. The system consists of three core layers: **DTO (Controller Layer)**, **Domain (Service Layer)**, and **Entity (Repository Layer)**. It also integrates with AWS S3 for cloud storage and supports local storage for development environments.
 
-- **Add, Edit, or Remove Services:**
-    - Admins can modify the list of available services.
-- **Categorize Services and Set Attributes:**
-    - Services can be categorized, and attributes like price and duration can be configured.
+## Architecture
 
-#### Branch Management
+### Layers
 
-- **Add, Edit, or Remove Branches in Different Cities:**
-    - Admins can manage branches across various cities.
-- **Assign Managers and Staff to Each Branch:**
-    - Specify and assign managers and staff to handle operations at each branch.
+1. **DTO (Controller Layer)**: Handles HTTP requests and responses. Defines data transfer objects (DTOs) to ensure data integrity between the client and server.
+2. **Domain (Service Layer)**: Contains the core business logic of the application.
+3. **Entity (Repository Layer)**: Manages database interactions and persistence logic.
 
-#### User Management
+### Modules
 
-- **Manage User Accounts:**
-    - Admins have control over user accounts.
-- **Assign Roles and Permissions to Managers and Staff:**
-    - Customize roles and permissions for managers and staff members.
+- **Auth Module**: Manages user authentication, interacting with the User and Session modules.
+- **User Module**: Handles user-related operations.
+- **Session Module**: Manages user sessions, including refresh token mechanisms.
+- **Content Module**: Handles file uploads, downloads, and content management.
 
-#### Reviews and Ratings
+### Adapters
 
-- **Monitor and Manage User Reviews and Ratings:**
-    - Admins can oversee and handle user feedback.
-- **Respond to User Feedback:**
-    - Admins have the ability to respond to user reviews.
+Adapters are used to transform data between different layers:
 
-#### Analytics
+- **ContentAdapter**: Converts data between DTO, Domain, and Entity representations.
+- Adapters implement specific interfaces like `ContentAdapterInterface` to ensure consistency.
 
-- **View Analytics on Service Usage, Popular Branches, and User Feedback:**
-    - Admins can access analytics to make informed decisions.
-- **Track Performance Metrics for Each Branch:**
-    - Monitor and assess the performance of individual branches.
+### Interfaces
 
-#### Notifications
+The project is interface-driven to promote flexibility and maintainability:
 
-- **Receive Alerts for New Service Bookings, User Reviews, or Other Important Updates:**
-    - Admins are notified of critical events in real-time.
+- `repo.interface.ts`
+- `service.interface.ts`
+- `adapter.interface.ts`
+- `storage.interface.ts`
 
-#### Booking Management
+### Inheritance
 
-- **Access and Manage Booking Schedules for Each Branch:**
-    - Admins can oversee and manage branch booking schedules.
-- **View Upcoming Appointments and Availability:**
-    - Monitor upcoming appointments and branch availability.
+- All entities inherit from `abstract.entity`.
+- Adapters inherit from `domain.adapter`.
 
-#### Reports
+## Authentication & Authorization
 
-- **Generate Reports on Business Performance, Revenue, and User Engagement:**
-    - Admins can generate comprehensive reports for strategic insights.
+- Uses **JWT (JSON Web Tokens)** for access and refresh tokens.
+- **JWT Guards/Strategies** validate bearer tokens.
+- Tokens are refreshed automatically, and users must re-login when both tokens expire.
 
-#### Settings
+## Account Verification
 
-- **Configure Application Settings:**
-    - Adjust settings, including business hours, holidays, and service availability.
+Account verification is implemented via email using **Nodemailer**. Upon registration, users receive a verification code to confirm their email address.
 
-### User Application
+## Storage Architecture
 
-#### User Authentication
+- **AWS S3 Integration**: Supports JPEG, PNG, and PDF file uploads up to 10 MB.
 
-- **Allow Users to Sign Up, Log In, and Manage Their Profiles:**
-    - Users can create accounts, log in, and update their profiles.
+- **Local Storage (in development)**: Can switch between AWS and local storage using dependency injection:
 
-#### Service Selection
+  ```typescript
+  @Inject(AwsService) private readonly storage: StorageInterface
+  ```
 
-- **Browse and Select Services from Different Categories:**
-    - Users can explore and choose services from various categories.
+  To switch to local storage, replace `AwsService` with `LocalStorageService`.
 
-#### Location Services
+- **Presigned URLs**: Generated for secure file access, automatically refreshed using **Bull** and **Redis**.
 
-- **Enable Geolocation or Manual Input for Finding Nearby Branches:**
-    - Users can locate nearby branches using geolocation or manual input.
+## Frontend
 
-#### Branch Details
+- Built with **React** using `useState` and `useEffect` for state management and side effects.
+- Interacts with the backend via API calls:
+  ```javascript
+  const fetchData = async () => {
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const response = await apiWithInterceptors.get(
+        "http://localhost:1222/wizzcloud/content/bucket/list",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setFiles(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  };
+  ```
 
-- **View Information About Each Branch, Including Manager and Staff Details:**
-    - Users can access details about each branch, its manager, and staff.
+## Docker & Deployment
 
-#### Booking System
+The project uses **Docker** for containerization and **docker-compose** for service orchestration:
 
-- **Choose a Service, Date, and Time for Booking:**
-    - Users can schedule appointments by selecting a service, date, and time.
-- **Receive Confirmation of the Booking:**
-    - Users get confirmation after successfully booking a service.
+### Services
 
-#### Review and Rating
+- **Backend**: Node.js application with NestJS.
+- **Frontend**: React application.
+- **Database**: PostgreSQL.
+- **Redis**: For caching and background job processing.
+- **Migrations**: Managed using `migrate/migrate`.
 
-- **Leave Reviews and Ratings for Services:**
-    - Users can provide feedback by leaving reviews and ratings.
-- **View Reviews from Other Users:**
-    - Users can see reviews from other customers.
+### docker-compose.yml
 
-#### Notifications
+```yaml
+services:
+  backend:
+    build:
+      context: ./wizz-cloud_be
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "1222:1222"
+    volumes:
+      - ./wizz-cloud_be:/app
+      - /app/node_modules
+      - ./wizz-cloud_be/cloud_storage:/app/cloud_storage
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    command: npm run start:dev:nodemon
 
-- **Receive Reminders for Upcoming Appointments:**
-    - Users receive reminders for scheduled appointments.
-- **Get Notified of Special Offers or Updates:**
-    - Users are notified of promotions or updates.
+  frontend:
+    build:
+      context: ./wizz-cloud_fe
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./wizz-cloud_fe:/app
+      - /app/node_modules
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+    command: npm run start:dev:nodemon
 
-#### User History
+  db:
+    image: postgres:13
+    container_name: wizzcloud-db
+    ports:
+      - "5433:5432"
+    env_file:
+      - ./.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-- **View Past Bookings and Reviews:**
-    - Users can access a history of their past bookings and reviews.
+  migrations:
+    image: migrate/migrate
+    volumes:
+      - ./wizz-cloud_be/var/migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
+    depends_on:
+      db:
+        condition: service_healthy
 
-#### Settings
+  redis:
+    image: redis:latest
+    container_name: wizzcloud-redis
+    ports:
+      - "6379:6379"
 
-- **Manage User Preferences, Notifications, and Account Settings:**
-    - Users have control over their preferences, notifications, and account settings.
+volumes:
+  pgdata:
+```
 
-#### Help and Support
+## Diagrams
 
-- **Access a Help Center or Customer Support for Assistance:**
-    - Users can seek assistance through a help center or customer support.
+### System Architecture
 
-## Folder Structure
+```
+[Client] → [Controller (DTO)] → [Service (Domain)] → [Repository (Entity)] → [Database]
+                                   ↓
+                            [AWS S3/Local Storage]
+                                   ↓
+                               [Redis + Bull]
+```
 
-The project is organized into the following folders:
-- ./apps/admin (Angular): Contains the Angular application for the admin panel.
-- ./apps/app (React Native): Contains the React Native application for user interactions.
-- ./apps/backend (Golang): Houses the backend logic and server implemented in Golang.
-- ./apps/landing (HTML/CSS): Includes the landing page files written in HTML and CSS.
+## Project Status
+
+**Note:** This project is a **pet project** and is currently **under active development**. Some features, like local storage, are not fully implemented.
+
+## Future Improvements
+
+- Complete local storage implementation.
+- Enhance frontend UI/UX.
+- Add comprehensive unit and integration tests.
+- Implement role-based access control (RBAC).
+
+## Contact
+
+For any questions regarding this project, feel free to reach out or explore the repository for more details.
+
