@@ -9,10 +9,10 @@ db:
     port: 5432
     host: db # or use localhost to use without docker container
     database: your database name
-    password: "your passsword"
+    password: "your password"
 
 jwt:
-  acecss_secret_key: youraccesssecretkey
+  access_secret_key: youraccesssecretkey
   refresh_secret_key: yourrefreshsecretkey
 
 cloud_storage:
