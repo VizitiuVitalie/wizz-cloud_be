@@ -12,8 +12,8 @@ db:
     password: "your passsword"
 
 jwt:
-  ACCESS_SECRET_KEY: youraccesssecretkey
-  REFRESH_SECRET_KEY: yourrefreshsecretkey
+  acecss_secret_key: youraccesssecretkey
+  refresh_secret_key: yourrefreshsecretkey
 
 cloud_storage:
   path: "/your/path/to/storage/"
@@ -23,3 +23,7 @@ aws:
   access_key_id: 111
   secret_access_key: 111
   bucket_name: 111
+
+business:
+  email_user: cloud@gmail.com
+  email_pass: pass

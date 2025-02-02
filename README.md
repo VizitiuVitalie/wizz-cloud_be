@@ -67,25 +67,7 @@ Account verification is implemented via email using **Nodemailer**. Upon registr
 ## Frontend
 
 - Built with **React** using `useState` and `useEffect` for state management and side effects.
-- Interacts with the backend via API calls:
-  ```javascript
-  const fetchData = async () => {
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const response = await apiWithInterceptors.get(
-        "http://localhost:1222/wizzcloud/content/bucket/list",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      setFiles(response.data || []);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    }
-  };
-  ```
+- Interacts with the backend via API calls
 
 ## Docker & Deployment
 
@@ -98,77 +80,6 @@ The project uses **Docker** for containerization and **docker-compose** for serv
 - **Database**: PostgreSQL.
 - **Redis**: For caching and background job processing.
 - **Migrations**: Managed using `migrate/migrate`.
-
-### docker-compose.yml
-
-```yaml
-services:
-  backend:
-    build:
-      context: ./wizz-cloud_be
-      dockerfile: Dockerfile
-      target: development
-    ports:
-      - "1222:1222"
-    volumes:
-      - ./wizz-cloud_be:/app
-      - /app/node_modules
-      - ./wizz-cloud_be/cloud_storage:/app/cloud_storage
-    env_file:
-      - ./.env
-    depends_on:
-      - db
-    command: npm run start:dev:nodemon
-
-  frontend:
-    build:
-      context: ./wizz-cloud_fe
-      dockerfile: Dockerfile
-      target: development
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./wizz-cloud_fe:/app
-      - /app/node_modules
-    env_file:
-      - ./.env
-    depends_on:
-      - backend
-    command: npm run start:dev:nodemon
-
-  db:
-    image: postgres:13
-    container_name: wizzcloud-db
-    ports:
-      - "5433:5432"
-    env_file:
-      - ./.env
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  migrations:
-    image: migrate/migrate
-    volumes:
-      - ./wizz-cloud_be/var/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
-    depends_on:
-      db:
-        condition: service_healthy
-
-  redis:
-    image: redis:latest
-    container_name: wizzcloud-redis
-    ports:
-      - "6379:6379"
-
-volumes:
-  pgdata:
-```
 
 ## Diagrams
 
@@ -193,7 +104,4 @@ volumes:
 - Add comprehensive unit and integration tests.
 - Implement role-based access control (RBAC).
 
-## Contact
-
-For any questions regarding this project, feel free to reach out or explore the repository for more details.
 
