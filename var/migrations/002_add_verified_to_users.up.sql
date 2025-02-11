@@ -1,3 +1,0 @@
-ALTER TABLE users
-ADD COLUMN verified BOOLEAN DEFAULT FALSE,
-ADD COLUMN verification_code VARCHAR(6);
