@@ -14,7 +14,7 @@ import { PresignedUrlProcessor } from './content.processor';
     StorageModule,
     BullModule.forRoot({
       redis: {
-        host: 'wizzcloud-redis',
+        host: 'redis',
         port: 6379,
       },
     }),

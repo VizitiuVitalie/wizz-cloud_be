@@ -55,15 +55,25 @@ export class ContentService implements ContentServiceInterface {
   }
 
   public async updateAllPresignedUrls(): Promise<void> {
+  try {
     const contents = await this.contentRepo.findAll();
     console.log('contents in updateAllPresignedUrls: ', contents);
     
+    if (contents.length === 0) {
+      console.log('No contents to update');
+      return;
+    }
+
     for (const content of contents) {
       const newPresignedUrl = await this.storage.generateLinks(content.fileKey);
       await this.contentRepo.updatePresignedUrl(content.id, newPresignedUrl);
       console.log(`Updated presignedUrl for content ID ${content.id}`);
     }
+  } catch (error) {
+    console.error('Error updating presigned URLs:', error);
+    // Не пробрасывайте ошибку выше, чтобы не ломать очередь
   }
+}
 
   public async deleteById(id: number): Promise<void> {
     return this.contentRepo.deleteById(id);

@@ -1,7 +1,3 @@
-CREATE DATABASE wizzcloud_db;
-
-\c wizzcloud_db
-
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   full_name VARCHAR(255) NOT NULL,

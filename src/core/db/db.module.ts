@@ -12,6 +12,8 @@ const providers: Provider[] = [
     useFactory: (configService: ConfigService) => {
       const config = configService.get<DatabaseConfig>(ConfigEnums.DATABASE);
 
+      console.log('DB Config:', config);
+
       return new DbProvider(new DbConfig(config));
     },
   },

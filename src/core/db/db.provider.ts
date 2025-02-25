@@ -9,7 +9,7 @@ export class DbProvider {
   public constructor(private readonly config: DbConfig) {
     this.pool = new Pool({
       user: this.config.options.postgres.user,
-      host: this.config.options.postgres.host || 'localhost',
+      host: this.config.options.postgres.host,
       database: this.config.options.postgres.database,
       password: this.config.options.postgres.password,
       port: this.config.options.postgres.port,
