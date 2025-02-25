@@ -32,7 +32,7 @@ export class AwsService implements StorageInterface {
       Bucket: this.bucketName,
       Key: fileKey,
     });
-    const presignedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 900 });
+    const presignedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 1800 });
     console.log('presignedUrl in aws.service: ', presignedUrl);
     
     return presignedUrl;
