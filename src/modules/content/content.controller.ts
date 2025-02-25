@@ -41,14 +41,17 @@ export class ContentController {
   @Post('/:userId')
   @UseInterceptors(
     FileFieldsInterceptor([{ name: 'files', maxCount: 10 }], {
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: 20 * 1024 * 1024 },
       fileFilter: (req, file, callback) => {
-        if (
-          ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)
-        ) {
+        const allowedTypes = [
+          'image/jpeg', 'image/png', 
+          'video/mp4', 'video/mpeg', 
+          'audio/mpeg', 'audio/mp3', 'audio/wav'
+        ];
+        if (allowedTypes.includes(file.mimetype)) {
           callback(null, true);
         } else {
-          callback(null, false);
+          callback(new Error('Invalid file type'), false);
         }
       },
     }),

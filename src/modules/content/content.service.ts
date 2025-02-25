@@ -29,7 +29,7 @@ export class ContentService implements ContentServiceInterface {
     console.log('Scheduling presigned URL updates');
     const repeatableJobs = await this.presignedUrlQueue.getRepeatableJobs();
     if (repeatableJobs.length === 0) {
-      await this.presignedUrlQueue.add('updatePresignedUrls', {}, { repeat: { cron: '*/10 * * * *' } }); // Every 10 minutes
+      await this.presignedUrlQueue.add('updatePresignedUrls', {}, { repeat: { cron: '*/25 * * * *' } }); // Every 25 minutes
     }
   }
 
@@ -55,13 +55,23 @@ export class ContentService implements ContentServiceInterface {
   }
 
   public async updateAllPresignedUrls(): Promise<void> {
-    const contents = await this.contentRepo.findAll();
-    console.log('contents in updateAllPresignedUrls: ', contents);
-    
-    for (const content of contents) {
-      const newPresignedUrl = await this.storage.generateLinks(content.fileKey);
-      await this.contentRepo.updatePresignedUrl(content.id, newPresignedUrl);
-      console.log(`Updated presignedUrl for content ID ${content.id}`);
+    try {
+      const contents = await this.contentRepo.findAll();
+      console.log('contents in updateAllPresignedUrls: ', contents);
+      
+      if (contents.length === 0) {
+        console.log('No contents to update');
+        return;
+      }
+  
+      for (const content of contents) {
+        const newPresignedUrl = await this.storage.generateLinks(content.fileKey);
+        await this.contentRepo.updatePresignedUrl(content.id, newPresignedUrl);
+        console.log(`Updated presignedUrl for content ID ${content.id}`);
+      }
+    } catch (error) {
+      console.error('Error updating presigned URLs:', error);
+      // Не пробрасывайте ошибку выше, чтобы не ломать очередь
     }
   }
 
