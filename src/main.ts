@@ -17,6 +17,7 @@ async function bootstrap() {
       'https://wizz-cloud-f8463.web.app',
       'https://wizz-cloud.com'
     ],
+    exposedHeaders: ['Content-Type', 'Content-Length', 'Video-Name'],
     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
     allowedHeaders: 'Content-Type, Authorization',
   };

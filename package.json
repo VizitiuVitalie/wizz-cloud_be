@@ -34,6 +34,7 @@
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "bull": "^4.16.5",
+    "ffmpeg-static": "^5.2.0",
     "glob": "^9.3.5",
     "js-yaml": "^4.1.0",
     "lru-cache": "^11.0.2",

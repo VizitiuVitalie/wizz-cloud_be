@@ -98,7 +98,7 @@ export class AuthService implements AuthServiceInterface {
 
     const exist = await this.userRepo.findByEmail(dto.email);
     if (exist) {
-      throw new Error('cannot find by email');
+      throw new Error('account with this email already exists');
     }
 
     const verificationCode = this.generateVerificationCode();

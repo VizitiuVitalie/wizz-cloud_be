@@ -45,7 +45,7 @@ export class ContentController {
       fileFilter: (req, file, callback) => {
         const allowedTypes = [
           'image/jpeg', 'image/png', 
-          'video/mp4', 'video/mpeg', 
+          'video/mp4', 'video/mpeg', 'video/quicktime', 
           'audio/mpeg', 'audio/mp3', 'audio/wav'
         ];
         if (allowedTypes.includes(file.mimetype)) {

@@ -71,7 +71,6 @@ export class ContentService implements ContentServiceInterface {
       }
     } catch (error) {
       console.error('Error updating presigned URLs:', error);
-      // Не пробрасывайте ошибку выше, чтобы не ломать очередь
     }
   }
 
