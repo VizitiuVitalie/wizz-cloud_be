@@ -93,12 +93,12 @@ export class AuthService implements AuthServiceInterface {
 
   public async register(dto: RegisterDto): Promise<{ message: string }> {
     if (!this.validateEmail(dto.email)) {
-      throw new BadRequestException('Ivalid email format');
+      throw new BadRequestException('Invalid email format');
     }
 
     const exist = await this.userRepo.findByEmail(dto.email);
     if (exist) {
-      throw new Error('account with this email already exists');
+      throw new BadRequestException('Account with this email already exists');
     }
 
     const verificationCode = this.generateVerificationCode();

@@ -44,10 +44,20 @@ export class ContentController {
       limits: { fileSize: 20 * 1024 * 1024 },
       fileFilter: (req, file, callback) => {
         const allowedTypes = [
-          'image/jpeg', 'image/png', 
-          'video/mp4', 'video/mpeg', 'video/quicktime', 
-          'audio/mpeg', 'audio/mp3', 'audio/wav'
+          'image/jpeg',
+          'image/png',
+          'image/heic',
+          'image/heif',
+          'image/gif',
+          'application/octet-stream',
+          'video/mp4',
+          'video/mpeg',
+          'video/quicktime',
+          'audio/mpeg',
+          'audio/mp3',
+          'audio/wav',
         ];
+        console.log('File MIME type:', file.mimetype);
         if (allowedTypes.includes(file.mimetype)) {
           callback(null, true);
         } else {
@@ -78,7 +88,6 @@ export class ContentController {
     const savedContents: ContentDto[] = [];
 
     for (const file of files.files) {
-
       const contentData: CreateContentDto = {
         id: null,
         userId: userId,
@@ -86,7 +95,8 @@ export class ContentController {
         type: file.mimetype,
         size: file.size,
       };
-      const domain = this.contentAdapter.FromCreateContentDtoToDomain(contentData);
+      const domain =
+        this.contentAdapter.FromCreateContentDtoToDomain(contentData);
       const createdDomain = await this.contentService.uploadContent(
         domain,
         file,

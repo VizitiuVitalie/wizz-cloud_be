@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ConfigEnums } from './core/config/config.enums';
 import { HttpConfig } from './core/config/http.config';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { AllExceptionsFilter } from './shared/exceptions/exception.filter';
 import * as fs from 'fs';
 import { join } from 'path';
 
@@ -51,6 +52,8 @@ async function bootstrap() {
     fs.mkdirSync(fullPath, { recursive: true });
     console.log(`Created directory: ${fullPath}`);
   }
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.setGlobalPrefix('wizzcloud');
 

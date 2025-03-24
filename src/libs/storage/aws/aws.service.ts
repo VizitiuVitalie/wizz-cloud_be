@@ -13,6 +13,8 @@ import { Readable } from 'stream';
 import { spawn } from 'child_process';
 const ffmpegPath = require('ffmpeg-static');
 
+//TODO: better use LAMBDA ffmpeg for transcoding but in my case it's ok for little files
+
 @Injectable()
 export class AwsService implements StorageInterface {
   private readonly s3Client: S3Client;
@@ -34,6 +36,62 @@ export class AwsService implements StorageInterface {
     this.maxFileSize = this.configService.get<number>('MAX_FILE_SIZE');
   }
 
+  private async repairVideo(buffer: Buffer): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const args = [
+        '-err_detect', 'ignore_err',
+        '-fflags', '+genpts',
+        '-i', 'pipe:0',
+        '-c', 'copy',
+        '-f', 'mp4',
+        'pipe:1'
+      ];
+
+      const ffmpeg = spawn(ffmpegPath, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+      const chunks: Buffer[] = [];
+      let stderr = '';
+
+      ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
+      ffmpeg.stderr.on('data', data => stderr += data.toString());
+
+      ffmpeg.on('close', code => {
+        code === 0 
+          ? resolve(Buffer.concat(chunks))
+          : reject(new Error(`Repair failed: ${stderr}`));
+      });
+
+      ffmpeg.stdin.write(buffer);
+      ffmpeg.stdin.end();
+    });
+  }
+
+  private async safeTranscode(buffer: Buffer): Promise<{ buffer: Buffer; isRepaired: boolean }> {
+    try {
+      // first try to transcode
+      return { 
+        buffer: await this.transcodeVideo(buffer), 
+        isRepaired: false 
+      };
+    } catch (error) {
+      console.log('Initial transcode failed, attempting repair...');
+      
+      try {
+        // try to recover
+        const repairedBuffer = await this.repairVideo(buffer);
+        return {
+          buffer: await this.transcodeVideo(repairedBuffer),
+          isRepaired: true
+        };
+      } catch (repairError) {
+        console.log('Repair failed, uploading original');
+        return { 
+          buffer: buffer, 
+          isRepaired: false 
+        };
+      }
+    }
+  }
+
   private async transcodeVideo(buffer: Buffer): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const args = [
@@ -42,11 +100,11 @@ export class AwsService implements StorageInterface {
         '-i', 'pipe:0',
         '-f', 'mp4',
         '-vcodec', 'libx264',
-        '-preset', 'ultrafast', // Максимальная скорость
-        '-crf', '28',           // Немного ниже качество для скорости
+        '-preset', 'ultrafast', // fast encoding
+        '-crf', '28',           // low quality for better performance
         '-acodec', 'aac',
         '-movflags', 'frag_keyframe+empty_moov',
-        '-threads', '2',        // Ограничение потоков
+        '-threads', '2',        // limit CPU usage
         '-y',
         'pipe:1'
       ];
@@ -109,40 +167,51 @@ export class AwsService implements StorageInterface {
     file: Express.Multer.File
   ): Promise<{ fileKey: string; presignedUrl: string }> {
     try {
-      // 1. Проверка размера файла
+      // 1. Валидация размера
       if (file.size > this.maxFileSize) {
         throw new Error(`File size exceeds limit: ${this.maxFileSize} bytes`);
       }
 
-      // 2. Транскодирование видео
+      let finalBuffer = file.buffer;
       let originalName = file.originalname;
+      let metadata = {
+        original_size: file.size.toString(),
+        processing_status: 'original'
+      };
+
+      // 2. Обработка видео
       if (file.mimetype.startsWith('video/')) {
-        console.log(`Transcoding video: ${originalName}`);
-        const transcodedBuffer = await this.transcodeVideo(file.buffer);
-        file.buffer = transcodedBuffer;
-        file.mimetype = 'video/mp4';
-        originalName = originalName.replace(/\.[^/.]+$/, '.mp4');
+        try {
+          const transcodeResult = await this.safeTranscode(file.buffer);
+          
+          finalBuffer = transcodeResult.buffer;
+          metadata.processing_status = transcodeResult.isRepaired 
+            ? 'repaired_and_transcoded' 
+            : 'transcoded';
+
+          // Обновляем имя и MIME-тип
+          originalName = originalName.replace(/\.[^/.]+$/, '.mp4');
+        } catch (error) {
+          metadata.processing_status = 'failed_but_uploaded';
+          console.error('Full processing failed:', error);
+        }
       }
 
       // 3. Загрузка в S3
       const fileKey = `${uuidv4()}-${originalName}`;
-      const uploadCommand = new PutObjectCommand({
+      await this.s3Client.send(new PutObjectCommand({
         Bucket: this.bucketName,
         Key: fileKey,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-        Metadata: {
-          original_size: file.size.toString(),
-          processed_size: file.buffer.length.toString(),
-        },
-      });
+        Body: finalBuffer,
+        ContentType: file.mimetype.startsWith('video/') ? 'video/mp4' : file.mimetype,
+        Metadata: metadata,
+      }));
 
-      await this.s3Client.send(uploadCommand);
       return {
         fileKey,
         presignedUrl: await this.generateLinks(fileKey)
       };
-      
+
     } catch (error) {
       console.error(`File processing failed: ${error.message}`);
       throw new InternalServerErrorException(
