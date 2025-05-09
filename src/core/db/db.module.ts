@@ -1,5 +1,5 @@
 import { Module, Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ConfigEnums } from '../config/config.enums';
 import { DatabaseConfig } from '../config/db.config';
 import { DbConfig } from './db.config';
@@ -18,7 +18,7 @@ const providers: Provider[] = [
 ];
 
 @Module({
-  imports: [],
+  imports: [ConfigModule],
   providers: [ConfigService, ...providers],
   exports: [...providers],
 })

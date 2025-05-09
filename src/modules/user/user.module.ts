@@ -4,11 +4,12 @@ import { UserAdapter } from './user.adapter';
 import { UserController } from './user.controller';
 import { UserRepo } from './user.repo';
 import { UserService } from './user.service';
+import { ContentModule } from '../content/content.module';
 
 @Module({
-  imports: [DbModule],
+  imports: [DbModule, ContentModule],
   controllers: [UserController],
   providers: [UserRepo, UserService, UserAdapter],
-  exports: [UserService],
+  exports: [UserService, UserRepo, UserAdapter],
 })
 export class UserModule {}
